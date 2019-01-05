@@ -2,7 +2,7 @@ import BrowserPonies from '../src';
 import BrowserPoniesConfig from './ponycfg.json';
 import { observe, tag, partial } from '../src/utils';
 
-let add = function(element, arg) {
+let add = function (element, arg) {
   if (!arg) return;
   if (typeof arg === 'string') {
     element.appendChild(document.createTextNode(arg));
@@ -57,28 +57,28 @@ let add = function(element, arg) {
   }
 };
 
-let dataUrl = function(mimeType, data) {
+let dataUrl = function (mimeType, data) {
   return 'data:' + mimeType + ';base64,' + Base64.encode(data);
 };
 // inspired by:
 // http://farhadi.ir/posts/utf8-in-javascript-with-a-new-trick
 let Base64 = {
-  encode: function(input) {
+  encode: function (input) {
     return btoa(unescape(encodeURIComponent(input)));
   },
-  decode: function(input) {
+  decode: function (input) {
     return decodeURIComponent(escape(atob(input)));
   }
 };
 
-let $ = function(id) {
+let $ = function (id) {
   return document.getElementById(id);
 };
 function absUrl(url) {
   return window.location.href;
 }
 
-window.$x = function(xpath, context) {
+window.$x = function (xpath, context) {
   let nodes = [];
   try {
     let doc = (context && context.ownerDocument) || document;
@@ -116,7 +116,7 @@ function init() {
   let ponies = BrowserPonies.ponies();
   let names = [];
 
-  for (let name in ponies) {
+  for (let [name, pony] of ponies.entries()) {
     names.push(name);
   }
   names.sort();
@@ -124,8 +124,8 @@ function init() {
   let categorymap = {};
 
   // find all categories:
-  for (let i = 0, n = names.length; i < n; ++i) {
-    let pony = ponies[names[i]];
+  for (const name of names) {
+    let pony = ponies.get(name);
     for (let j = 0, m = pony.categories.length; j < m; ++j) {
       categorymap[pony.categories[j]] = true;
     }
@@ -135,17 +135,18 @@ function init() {
     categories.push(name);
   }
   categories.sort();
+  console.log(categories)
 
   // build pony list:
   list.appendChild(
     render('Random Pony', 'ponies/Random%20Pony/random-pony.gif', 0, categories)
   );
-  for (let i = 0, n = names.length; i < n; ++i) {
-    let pony = ponies[names[i]];
+  for (const name of names) {
+    let pony = ponies.get(name);
     list.appendChild(
       render(
         pony.name,
-        pony.all_behaviors[0].rightimage,
+        pony.behaviors[0].rightimage,
         pony.instances.length,
         pony.categories
       )
@@ -188,7 +189,7 @@ function init() {
   }
 }
 
-observe(window, 'click', function(event) {
+observe(window, 'click', function (event) {
   let target = event.target || event.srcElement;
   if (target.id !== 'addcat') {
     $('catselect').style.display = 'none';
@@ -597,9 +598,9 @@ function updateConfig() {
   }
 }
 
-let starter = function(srcs, cfg) {
+let starter = function (srcs, cfg) {
   let cbcount = 1;
-  let callback = function() {
+  let callback = function () {
     --cbcount;
     if (cbcount === 0) {
       BrowserPonies.setBaseUrl(cfg.baseurl);
@@ -752,7 +753,7 @@ function bookmarksMenu(config) {
 }
 
 function dragoverHandler(supportedTypes) {
-  return function(event) {
+  return function (event) {
     let files = event.dataTransfer.files;
     let accept = false;
 
@@ -995,7 +996,7 @@ function fileReaderError(file, event) {
 }
 
 function loadNamedResult(load, name) {
-  return function(event) {
+  return function (event) {
     load(event.target.result, name);
   };
 }
@@ -1036,7 +1037,7 @@ function upOrSelfClass(el, className) {
 }
 
 function loadResultInto(input) {
-  return function(event) {
+  return function (event) {
     input.value = event.target.result;
   };
 }
@@ -1411,7 +1412,7 @@ function ownPoniesScript() {
       let pony = JSON.parse(li.getAttribute('data-pony'));
       let filemap = {};
 
-      let getUrl = function(filename) {
+      let getUrl = function (filename) {
         return filemap[decodeURIComponent(filename || '').toLowerCase()];
       };
 

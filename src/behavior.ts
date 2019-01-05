@@ -5,7 +5,7 @@ import Effect from './effect';
 import state from './globalState';
 import Pony from './pony';
 import Speech from './speech';
-import { AllowedMoves, Pos, Size } from './types';
+import { AllowedMoves, Size } from './types';
 
 export default class Behavior {
   name: string;

@@ -1,6 +1,5 @@
 import CIMap from './cimap';
 import { BASE_URL, BaseZIndex } from './constants';
-import Instance from './instance';
 import Pony from './pony';
 import PonyInstance from './ponyInstance';
 import { Callback, Loader, Pos, RemoveQueue, Resources } from './types';

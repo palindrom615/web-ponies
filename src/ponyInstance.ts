@@ -1,6 +1,5 @@
 import Behavior from './behavior';
 import { BaseZIndex } from './constants';
-import Effect from './effect';
 import EffectInstance from './effectInstance';
 import state from './globalState';
 import Instance from './instance';
