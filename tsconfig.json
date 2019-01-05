@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": false,
+    "module": "es6",
+    "target": "ESNext",
+    "lib": ["esnext", "dom"],
+    "allowJs": true
+  }
+}
