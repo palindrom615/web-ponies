@@ -78,6 +78,10 @@ export type RemoveQueue = {
 
 export type Callback = ((...args: any[]) => void);
 
+export type Observer = (isSuccess: boolean) => void;
+
+export type Load = (loader: Loader, url: string, observer: Observer) => void;
+
 export type Loader = {
   loaded: boolean;
   callbacks: Callback[];

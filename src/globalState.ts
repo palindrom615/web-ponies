@@ -2,7 +2,7 @@ import CIMap from './cimap';
 import { BASE_URL, BaseZIndex } from './constants';
 import Pony from './pony';
 import PonyInstance from './ponyInstance';
-import { Callback, Loader, Pos, RemoveQueue, Resources } from './types';
+import { Callback, Load, Loader, Pos, RemoveQueue, Resources } from './types';
 import {
   observe,
   partial,
@@ -328,8 +328,8 @@ class GlobalState {
 
     this.lastTime = currentTime;
   }
-  preload(load, url, callback?) {
-    if (this.resources.hasOwnProperty(url)) {
+  preload(load: Load, url: string, callback?: Callback): void {
+    if (url in this.resources) {
       if (callback) {
         const loader: Loader = this.resources[url];
         if (loader.loaded) {
@@ -345,47 +345,45 @@ class GlobalState {
         callbacks: callback ? [callback] : []
       });
 
-      load(
-        loader,
-        url,
-        (success) => {
-          if (loader.loaded) {
-            console.error('resource loaded twice: ' + url);
-            return;
-          }
-          loader.loaded = true;
-          ++this.resourceLoadedCount;
-          if (!success) {
-            console.error(
-              `${this.resourceLoadedCount} of ${
-              this.resourceCount
-              } load error: ${url}`
-            );
-          }
-          this.onProgressCallbacks.forEach((cb) =>
-            cb(
-              this.resourceLoadedCount,
-              this.resourceCount,
-              url,
-              success
-            )
-          );
-          loader.callbacks.forEach((cb) =>
-            cb(loader.object, success)
-          );
-          delete loader.callbacks;
-
-          if (this.resourceLoadedCount === this.resourceCount) {
-            this.onloadCallbacks.forEach((cb) => cb());
-            this.onloadCallbacks = [];
-          }
+      const observer = (success) => {
+        if (loader.loaded) {
+          console.error('resource loaded twice: ' + url);
+          return;
         }
-      );
+        loader.loaded = true;
+        ++this.resourceLoadedCount;
+        if (!success) {
+          console.error(
+            `${this.resourceLoadedCount} of ${
+            this.resourceCount
+            } load error: ${url}`
+          );
+        }
+        this.onProgressCallbacks.forEach((cb) =>
+          cb(
+            this.resourceLoadedCount,
+            this.resourceCount,
+            url,
+            success
+          )
+        );
+        loader.callbacks.forEach((cb) =>
+          cb(loader.object, success)
+        );
+        loader.callbacks = [];
+
+        if (this.resourceLoadedCount === this.resourceCount) {
+          this.onloadCallbacks.forEach((cb) => cb());
+          this.onloadCallbacks = [];
+        }
+      };
+
+      load(loader, url, observer);
     }
   }
-  preloadImage(url, callback) {
-    const loadImage = function(loader, imageUrl, observer) {
-      const image = (loader.object = new Image());
+  preloadImage(url: string, callback) {
+    const loadImage: Load = (loader, imageUrl, observer) => {
+      const image: HTMLImageElement = (loader.object = new Image());
       observe(image, 'load', partial(observer, true));
       observe(image, 'error', partial(observer, false));
       observe(image, 'abort', partial(observer, false));
