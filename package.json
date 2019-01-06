@@ -15,8 +15,7 @@
   "scripts": {
     "prepare": "node scripts/convertIni.js",
     "start": "webpack-dev-server --mode development --open --config conf/webpack.dev.js",
-    "build": "webpack --mode production --config conf/webpack.prod.js",
-    "lint": "eslint ./src/**.js"
+    "build": "webpack --mode production --config conf/webpack.prod.js"
   },
   "devDependencies": {
     "@babel/core": "^7.2.0",
