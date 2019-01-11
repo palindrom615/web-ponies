@@ -2,6 +2,7 @@ import CIMap from './cimap';
 import { BASE_URL, BaseZIndex } from './constants';
 import Pony from './pony';
 import PonyInstance from './ponyInstance';
+import Progressbar from './progressbar';
 import { Callback, Load, Loader, Pos, RemoveQueue, Resources } from './types';
 import {
   observe,
@@ -118,154 +119,11 @@ class GlobalState {
       this.onProgressCallbacks.push(callback);
     };
 
-    let progressbar = null;
-    const insertProgressbar = () => {
-      document.body.appendChild(progressbar.container);
-      centerProgressbar();
-      setTimeout(function() {
-        if (progressbar && !progressbar.finished) {
-          progressbar.container.style.display = '';
-        }
-      }, 250);
-      observe(window, 'resize', centerProgressbar);
-      stopObserving(window, 'load', insertProgressbar);
-    };
-
-    const centerProgressbar = function() {
-      const winsize = windowSize();
-      let hide = false;
-      if (progressbar.container.style.display === 'none') {
-        hide = true;
-        progressbar.container.style.visibility = 'hidden';
-        progressbar.container.style.display = '';
-      }
-      const width = progressbar.container.offsetWidth;
-      const height = progressbar.container.offsetHeight;
-      const labelHeight = progressbar.label.offsetHeight;
-      if (hide) {
-        progressbar.container.style.display = 'none';
-        progressbar.container.style.visibility = '';
-      }
-      progressbar.container.style.left =
-        Math.round((winsize.width - width) * 0.5) + 'px';
-      progressbar.container.style.top =
-        Math.round((winsize.height - height) * 0.5) + 'px';
-      progressbar.label.style.top =
-        Math.round((height - labelHeight) * 0.5) + 'px';
-    };
+    const progressbar: Progressbar = new Progressbar();
 
     onprogress((loaded, total) => {
-      if (this.showLoadProgress || progressbar) {
-        if (!progressbar) {
-          progressbar = {
-            bar: tag('div', {
-              style: {
-                margin: '0',
-                padding: '0',
-                borderStyle: 'none',
-                width: '0',
-                height: '100%',
-                background: '#9BD6F4',
-                MozBorderRadius: '5px',
-                borderRadius: '5px'
-              },
-              id: 'pc_m_bar'
-            }),
-            label: tag('div', {
-              style: {
-                position: 'absolute',
-                margin: '0',
-                padding: '0',
-                borderStyle: 'none',
-                top: '0px',
-                left: '0px',
-                width: '100%',
-                textAlign: 'center'
-              },
-              id: 'pc_m_label'
-            })
-          };
-          progressbar.barcontainer = tag(
-            'div',
-            {
-              style: {
-                margin: '0',
-                padding: '0',
-                borderStyle: 'none',
-                width: '100%',
-                height: '100%',
-                background: '#D8D8D8',
-                MozBorderRadius: '5px',
-                borderRadius: '5px'
-              },
-              id: 'pc_m_barcontainer'
-            },
-            progressbar.bar
-          );
-          progressbar.container = tag(
-            'div',
-            {
-              style: {
-                position: 'fixed',
-                width: '450px',
-                height: '30px',
-                background: 'white',
-                padding: '10px',
-                margin: '0',
-                MozBorderRadius: '5px',
-                borderRadius: '5px',
-                color: '#294256',
-                fontWeight: 'bold',
-                fontSize: '16px',
-                opacity: '0.9',
-                display: 'none',
-                boxShadow: '2px 2px 12px rgba(0,0,0,0.4)',
-                MozBoxShadow: '2px 2px 12px rgba(0,0,0,0.4)'
-              },
-              id: 'pc_m_container',
-              onclick() {
-                if (progressbar) {
-                  progressbar.container.style.display = 'none';
-                }
-              }
-            },
-            progressbar.barcontainer,
-            progressbar.label
-          );
-        }
-
-        progressbar.finished = loaded === total;
-
-        const progress = total === 0 ? 1.0 : loaded / total;
-        progressbar.bar.style.width = Math.round(progress * 450) + 'px';
-        progressbar.label.innerHTML = `Loading Ponies... ${Math.floor(
-          progress * 100
-        )}%`;
-
-        if (!progressbar.container.parentNode) {
-          if (document.body) {
-            insertProgressbar();
-          } else {
-            observe(window, 'load', insertProgressbar);
-          }
-        }
-
-        if (progressbar.finished) {
-          setTimeout(function() {
-            stopObserving(window, 'resize', centerProgressbar);
-            stopObserving(window, 'load', insertProgressbar);
-            if (
-              progressbar &&
-              progressbar.container &&
-              progressbar.container.parentNode
-            ) {
-              progressbar.container.parentNode.removeChild(
-                progressbar.container
-              );
-            }
-            progressbar = null;
-          }, 500);
-        }
+      if (this.showLoadProgress) {
+        progressbar.renew(loaded, total);
       }
     });
   }
@@ -383,10 +241,11 @@ class GlobalState {
   }
   preloadImage(url: string, callback) {
     const loadImage: Load = (loader, imageUrl, observer) => {
-      const image: HTMLImageElement = (loader.object = new Image());
-      observe(image, 'load', partial(observer, true));
-      observe(image, 'error', partial(observer, false));
-      observe(image, 'abort', partial(observer, false));
+      const image: HTMLImageElement = new Image();
+      loader.object = image;
+      image.onload = partial(observer, true);
+      image.onerror = partial(observer, false);
+      image.onabort = partial(observer, false);
       image.src = imageUrl;
     };
     this.preload(loadImage, url, callback);
