@@ -1,6 +1,6 @@
 import urlJoin from 'proper-url-join';
 
-import state from './globalState';
+import state from './index';
 import { Locations, Pos, Size } from './types';
 
 const parseLocation = function(value: string): string {

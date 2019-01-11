@@ -1,7 +1,7 @@
 import Behavior from './behavior';
 import { BaseZIndex } from './constants';
 import EffectInstance from './effectInstance';
-import state from './globalState';
+import state from './index';
 import Instance from './instance';
 import Interaction from './interaction';
 import Pony from './pony';

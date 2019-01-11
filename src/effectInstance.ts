@@ -1,6 +1,6 @@
 import { BaseZIndex } from './constants';
 import Effect from './effect';
-import state from './globalState';
+import state from './index';
 import Instance from './instance';
 import PonyInstance from './ponyInstance';
 import { Locations, Pos, Size } from './types';

@@ -3,7 +3,7 @@ import urlJoin from 'proper-url-join';
 import Behavior from './behavior';
 import CIMap from './cimap';
 import Effect from './effect';
-import state from './globalState';
+import state from './index';
 import Interaction from './interaction';
 import Speech from './speech';
 import { AllowedMoves } from './types';

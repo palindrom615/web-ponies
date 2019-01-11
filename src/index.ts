@@ -1,38 +1,289 @@
-import state from './globalState';
+import CIMap from './cimap';
+import { BASE_URL, BaseZIndex } from './constants';
 import Pony from './pony';
 import PonyInstance from './ponyInstance';
-import { Config } from './types';
-import { parseBoolean, sample } from './utils';
+import Progressbar from './progressbar';
+import { Callback, Config, Load, Loader, Pos, RemoveQueue, Resources } from './types';
+import {
+  observe,
+  parseBoolean,
+  partial,
+  sample,
+  setOpacity,
+  stopObserving,
+  tag,
+  windowSize
+} from './utils';
 
-const onload = function(callback) {
-  if (state.resourceLoadedCount === state.resourceCount) {
-    callback();
-  } else {
-    state.onloadCallbacks.push(callback);
+class BrowserPonies {
+  overlay: HTMLDivElement = null;
+  showFps: boolean = false;
+  fpsDisplay: HTMLDivElement = null;
+  mousePosition: Pos = null;
+  dragged: PonyInstance = null;
+  timer: number = null;
+  fadeDuration: number = 500;
+  instances: PonyInstance[] = [];
+  removing: RemoveQueue[] = [];
+  interval = 40;
+  dontSpeak: boolean = false;
+  globalSpeed = 3; // why is it too slow otherwise?
+  audioEnabled: boolean = false;
+  interactionInterval = 500;
+  speakProbability = 0.1;
+  globalBaseUrl: string = BASE_URL.href + '/ponies';
+  volume = 1.0;
+
+  lastTime: number = Date.now();
+
+  resources: Resources = {};
+  resourceCount = 0;
+  resourceLoadedCount = 0;
+  onloadCallbacks: Callback[] = [];
+  onProgressCallbacks: Callback[] = [];
+
+  isPreloadAll = false;
+  showLoadProgress = true;
+  ponies: CIMap<Pony> = new CIMap();
+
+  constructor() {
+    this.initEvent();
+    this.initProgress();
   }
-};
+  onload(cb) {
+    if (this.resourceLoadedCount === this.resourceCount) {
+      cb();
+    } else {
+      this.onloadCallbacks.push(cb);
+    }
+  }
+  initEvent() {
+    if (typeof document.hidden !== 'undefined') {
+      observe(document, 'visibilitychange', () => {
+        const documentHidden = () =>
+          'hidden' in document ? document[name] : false;
+        if (this.timer !== null) {
+          if (documentHidden()) {
+            clearTimeout(this.timer);
+          } else {
+            this.lastTime = Date.now();
+            this.tick();
+          }
+        }
+      });
+    }
+    observe(document, 'touchstart', () => {
+      this.mousePosition = null;
+    });
+    observe(document, 'mousemove', (event) => {
+      if (!this.mousePosition) {
+        this.mousePosition = {
+          x: event.clientX,
+          y: event.clientY
+        };
+      }
+      if (this.dragged) {
+        this.dragged.moveBy({
+          x: event.clientX - this.mousePosition.x,
+          y: event.clientY - this.mousePosition.y
+        });
+        Object.assign(
+          this.dragged.destPosition,
+          this.dragged.currentPosition
+        );
+        event.preventDefault();
+      }
+      this.mousePosition.x = event.clientX;
+      this.mousePosition.y = event.clientY;
+    });
+    observe(document, 'mouseup', () => {
+      if (this.dragged) {
+        const inst = this.dragged;
+        this.dragged = null;
+        if (this.timer !== null) {
+          inst.nextBehavior();
+        }
+      }
+    });
+  }
+  initProgress() {
+    this.preload((loader: Loader, url, observer) => {
+      if (document.body) {
+        observer(true);
+      } else {
+        let loaded = false;
+        const fireLoad = function() {
+          if (!loaded) {
+            loaded = true;
+            observer(true);
+          }
+        };
+        observe(document, 'DOMContentLoaded', fireLoad);
+        // fallback
+        observe(window, 'load', fireLoad);
+      }
+    }, document.location.href);
 
-const BrowserPonies = {
+    const onprogress = (callback) => {
+      this.onProgressCallbacks.push(callback);
+    };
+
+    const progressbar: Progressbar = new Progressbar();
+
+    onprogress((loaded, total) => {
+      if (this.showLoadProgress) {
+        progressbar.renew(loaded, total);
+      }
+    });
+  }
+  getOverlay() {
+    if (!this.overlay) {
+      this.overlay = tag('div', { id: 'browser-ponies' }) as HTMLDivElement;
+    }
+    if (!this.overlay.parentNode) {
+      document.body.appendChild(this.overlay);
+    }
+    return this.overlay;
+  }
+  tick() {
+    if (this.timer === null) { return; }
+    const currentTime = Date.now();
+    const timeSpan = currentTime - this.lastTime;
+    const winsize = windowSize();
+
+    this.instances.forEach((instance) =>
+      instance.update(currentTime, timeSpan, winsize)
+    );
+
+    // check if something needs to be removed:
+    this.removing = this.removing.filter((what) => {
+      if (what.at + this.fadeDuration <= currentTime) {
+        if (what.element.parentNode) {
+          what.element.parentNode.removeChild(what.element);
+        }
+      } else if (what.at <= currentTime) {
+        setOpacity(
+          what.element,
+          1 - (currentTime - what.at) / this.fadeDuration
+        );
+      }
+      return what.at + this.fadeDuration > currentTime;
+    });
+
+    if (this.showFps) {
+      if (!this.fpsDisplay) {
+        const overlay = this.getOverlay();
+        this.fpsDisplay = tag('div', {
+          style: {
+            fontSize: '18px',
+            position: 'fixed',
+            bottom: '0',
+            left: '0',
+            zIndex: String(BaseZIndex + 9001)
+          }
+        }) as HTMLDivElement;
+        overlay.appendChild(this.fpsDisplay);
+      }
+
+      this.fpsDisplay.innerHTML = Math.round(1000 / timeSpan) + ' fps';
+    }
+
+    this.timer = window.setTimeout(
+      this.tick.bind(this),
+      Math.max(this.interval - (currentTime - Date.now()), 0)
+    );
+
+    this.lastTime = currentTime;
+  }
+  preload(load: Load, url: string, callback?: Callback): void {
+    if (url in this.resources) {
+      if (callback) {
+        const loader: Loader = this.resources[url];
+        if (loader.loaded) {
+          callback(loader.object);
+        } else {
+          loader.callbacks.push(callback);
+        }
+      }
+    } else {
+      ++this.resourceCount;
+      const loader: Loader = (this.resources[url] = {
+        loaded: false,
+        callbacks: callback ? [callback] : []
+      });
+
+      const observer = (success) => {
+        if (loader.loaded) {
+          console.error('resource loaded twice: ' + url);
+          return;
+        }
+        loader.loaded = true;
+        ++this.resourceLoadedCount;
+        if (!success) {
+          console.error(
+            `${this.resourceLoadedCount} of ${
+            this.resourceCount
+            } load error: ${url}`
+          );
+        }
+        this.onProgressCallbacks.forEach((cb) =>
+          cb(
+            this.resourceLoadedCount,
+            this.resourceCount,
+            url,
+            success
+          )
+        );
+        loader.callbacks.forEach((cb) =>
+          cb(loader.object, success)
+        );
+        loader.callbacks = [];
+
+        if (this.resourceLoadedCount === this.resourceCount) {
+          this.onloadCallbacks.forEach((cb) => cb());
+          this.onloadCallbacks = [];
+        }
+      };
+
+      load(loader, url, observer);
+    }
+  }
+  preloadImage(url: string, callback) {
+    const loadImage: Load = (loader, imageUrl, observer) => {
+      const image: HTMLImageElement = new Image();
+      loader.object = image;
+      image.onload = partial(observer, true);
+      image.onerror = partial(observer, false);
+      image.onabort = partial(observer, false);
+      image.src = imageUrl;
+    };
+    this.preload(loadImage, url, callback);
+  }
+
+  /**
+   *
+   *
+   */
   addPonies(ponies: Array<Partial<Pony>>) {
     ponies.forEach((pony) => this.addPony(pony));
-  },
+  }
   addPony(pony) {
-    if (state.ponies.has(pony.baseurl)) {
+    if (this.ponies.has(pony.baseurl)) {
       console.error('Pony ' + pony.baseurl + ' already exists.');
       return false;
     }
-    state.ponies.set(pony.baseurl, new Pony(pony));
+    this.ponies.set(pony.baseurl, new Pony(pony));
     return true;
-  },
+  }
   removePonies(ponies: string[]) {
     ponies.forEach((pony) => this.removePony(pony));
-  },
+  }
   removePony(baseurl: string) {
-    if (state.ponies.has(baseurl)) {
-      state.ponies.get(baseurl).unspawnAll();
-      state.ponies.delete(baseurl);
+    if (this.ponies.has(baseurl)) {
+      this.ponies.get(baseurl).unspawnAll();
+      this.ponies.delete(baseurl);
     }
-  },
+  }
   spawnRandom(count) {
     if (count === undefined) { count = 1; } else { count = parseInt(count, 10); }
 
@@ -45,7 +296,7 @@ const BrowserPonies = {
     while (count > 0) {
       let mininstcount = Infinity;
 
-      for (const [name, pony] of state.ponies.entries()) {
+      for (const [name, pony] of this.ponies.entries()) {
         const instcount = pony.instances.length;
         if (instcount < mininstcount) {
           mininstcount = instcount;
@@ -60,7 +311,7 @@ const BrowserPonies = {
       }
 
       const names = [];
-      for (const [name, pony] of state.ponies.entries()) {
+      for (const [name, pony] of this.ponies.entries()) {
         if (pony.instances.length === mininstcount) {
           names.push(name);
         }
@@ -74,36 +325,27 @@ const BrowserPonies = {
       --count;
     }
     return spawned;
-  },
-  spawn(name, count) {
-    if (!state.ponies.has(name)) {
+  }
+  spawn(name, count = 1) {
+    if (!this.ponies.has(name)) {
       console.error('No such pony:', name);
       return false;
     }
-    const pony = state.ponies.get(name);
-    if (count === undefined) {
-      count = 1;
-    } else {
-      count = parseInt(count, 10);
-      if (isNaN(count)) {
-        console.error('unexpected NaN value');
-        return false;
-      }
-    }
+    const pony = this.ponies.get(name);
 
-    if (count > 0 && state.timer !== null) {
+    if (count > 0 && this.timer !== null) {
       pony.preload();
     }
     let n = count;
     while (n > 0) {
-      const inst = new PonyInstance(pony, state.ponies);
+      const inst = new PonyInstance(pony, this.ponies);
       pony.instances.push(inst);
-      if (state.timer !== null) {
-        onload(() => {
+      if (this.timer !== null) {
+        this.onload(() => {
           if (pony.instances.indexOf(inst) === -1) { return; }
-          state.instances.push(inst);
+          this.instances.push(inst);
           inst.img.style.visibility = 'hidden';
-          state.getOverlay().appendChild(inst.img);
+          this.getOverlay().appendChild(inst.img);
           inst.teleport();
           inst.nextBehavior();
           // fix position because size was initially 0x0
@@ -111,18 +353,18 @@ const BrowserPonies = {
           inst.img.style.visibility = '';
         });
       } else {
-        state.instances.push(inst);
+        this.instances.push(inst);
       }
       --n;
     }
     return true;
-  },
+  }
   unspawn(name, count) {
-    if (!state.ponies.has(name)) {
+    if (!this.ponies.has(name)) {
       console.error('No such pony:', name);
       return false;
     }
-    const pony = state.ponies.get(name);
+    const pony = this.ponies.get(name);
     if (count === undefined) {
       count = pony.instances.length;
     } else {
@@ -141,38 +383,38 @@ const BrowserPonies = {
       }
     }
     return true;
-  },
+  }
   unspawnAll() {
-    for (const [_, pony] of state.ponies.entries()) {
+    for (const [_, pony] of this.ponies.entries()) {
       pony.unspawnAll();
     }
-  },
+  }
   clear() {
     this.unspawnAll();
-    state.ponies.clear();
-  },
+    this.ponies.clear();
+  }
   preloadAll() {
-    for (const [_, pony] of state.ponies.entries()) {
+    for (const [_, pony] of this.ponies.entries()) {
       pony.preload();
     }
-  },
+  }
   preloadSpawned() {
-    for (const [_, pony] of state.ponies.entries()) {
+    for (const [_, pony] of this.ponies.entries()) {
       if (pony.instances.length > 0) {
         pony.preload();
       }
     }
-  },
+  }
   start() {
-    if (state.preloadAll) {
+    if (this.isPreloadAll) {
       this.preloadAll();
     } else {
       this.preloadSpawned();
     }
-    onload(function() {
-      const overlay = state.getOverlay();
+    this.onload(() => {
+      const overlay = this.getOverlay();
       overlay.innerHTML = '';
-      for (const inst of state.instances) {
+      for (const inst of this.instances) {
         inst.clear();
         inst.img.style.visibility = 'hidden';
         overlay.appendChild(inst.img);
@@ -182,91 +424,88 @@ const BrowserPonies = {
         inst.clipToScreen();
         inst.img.style.visibility = '';
       }
-      if (state.timer === null) {
-        state.lastTime = Date.now();
-        state.timer = window.setTimeout(state.tick.bind(state), 0);
+      if (this.timer === null) {
+        this.lastTime = Date.now();
+        this.timer = window.setTimeout(this.tick.bind(this), 0);
       }
     });
-  },
-  timer() {
-    return state.timer;
-  },
+  }
   stop() {
-    if (state.overlay) {
-      state.overlay.parentNode.removeChild(state.overlay);
-      state.overlay.innerHTML = '';
-      state.overlay = null;
+    if (this.overlay) {
+      this.overlay.parentNode.removeChild(this.overlay);
+      this.overlay.innerHTML = '';
+      this.overlay = null;
     }
-    state.fpsDisplay = null;
-    if (state.timer !== null) {
-      clearTimeout(state.timer);
-      state.timer = null;
+    this.fpsDisplay = null;
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+      this.timer = null;
     }
-  },
+  }
   pause() {
-    if (state.timer !== null) {
-      clearTimeout(state.timer);
-      state.timer = null;
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+      this.timer = null;
     }
-  },
+  }
   resume() {
-    if (state.preloadAll) {
+    if (this.isPreloadAll) {
       this.preloadAll();
     } else {
       this.preloadSpawned();
     }
-    onload(function() {
-      if (state.timer === null) {
-        state.lastTime = Date.now();
-        state.timer = window.setTimeout(state.tick.bind(state), 0);
+    this.onload(() => {
+      if (this.timer === null) {
+        this.lastTime = Date.now();
+        this.timer = window.setTimeout(this.tick.bind(this), 0);
       }
     });
-  },
+  }
   setInterval(ms) {
     ms = parseInt(ms, 10);
     if (isNaN(ms)) {
       console.error('unexpected NaN value for interval');
-    } else if (state.interval !== ms) {
-      state.interval = ms;
+    } else if (this.interval !== ms) {
+      this.interval = ms;
     }
-  },
+  }
   getInterval() {
-    return state.interval;
-  },
+    return this.interval;
+  }
   setFps(fps) {
     this.setInterval(1000 / Number(fps));
-  },
+  }
   getFps() {
-    return 1000 / state.interval;
-  },
+    return 1000 / this.interval;
+  }
   setInteractionInterval(ms) {
     ms = Number(ms);
     if (isNaN(ms)) {
       console.error('unexpected NaN value for interaction interval');
     } else {
-      state.interactionInterval = ms;
+      this.interactionInterval = ms;
     }
-  },
+  }
   getInteractionInterval() {
-    return state.interactionInterval;
-  },
+    return this.interactionInterval;
+  }
   setSpeakProbability(probability) {
     probability = Number(probability);
     if (isNaN(probability)) {
       console.error('unexpected NaN value for speak probability');
     } else {
-      state.speakProbability = probability;
+      this.speakProbability = probability;
     }
-  },
+  }
   getSpeakProbability() {
-    return state.speakProbability;
-  },
+    return this.speakProbability;
+  }
   setDontSpeak(value) {
-    state.dontSpeak = !!value;
-  },
+    this.dontSpeak = !!value;
+  }
   isDontSpeak() {
-    return state.dontSpeak;
-  },
+    return this.dontSpeak;
+  }
   setVolume(value) {
     value = Number(value);
     if (isNaN(value)) {
@@ -274,24 +513,24 @@ const BrowserPonies = {
     } else if (value < 0 || value > 1) {
       console.error('volume out of range', value);
     } else {
-      state.volume = value;
+      this.volume = value;
     }
-  },
+  }
   getVolume() {
-    return state.volume;
-  },
+    return this.volume;
+  }
   setBaseUrl(url) {
-    state.globalBaseUrl = url;
-  },
+    this.globalBaseUrl = url;
+  }
   getBaseUrl() {
-    return state.globalBaseUrl;
-  },
+    return this.globalBaseUrl;
+  }
   setSpeed(speed) {
-    state.globalSpeed = Number(speed);
-  },
+    this.globalSpeed = Number(speed);
+  }
   getSpeed() {
-    return state.globalSpeed;
-  },
+    return this.globalSpeed;
+  }
   setAudioEnabled(enabled) {
     if (typeof enabled === 'string') {
       try {
@@ -303,84 +542,78 @@ const BrowserPonies = {
     } else {
       enabled = !!enabled;
     }
-    if (state.audioEnabled !== enabled && enabled) {
-      state.audioEnabled = enabled;
-      if (state.preloadAll) {
+    if (this.audioEnabled !== enabled && enabled) {
+      this.audioEnabled = enabled;
+      if (this.isPreloadAll) {
         this.preloadAll();
       } else {
         this.preloadSpawned();
       }
     } else {
-      state.audioEnabled = enabled;
+      this.audioEnabled = enabled;
     }
-  },
+  }
   isAudioEnabled() {
-    return state.audioEnabled;
-  },
+    return this.audioEnabled;
+  }
   setShowFps(value) {
     if (typeof value === 'string') {
       try {
-        state.showFps = parseBoolean(value);
+        this.showFps = parseBoolean(value);
       } catch (e) {
         console.error('illegal value for show fps', value, e);
         return;
       }
     } else {
-      state.showFps = !!value;
+      this.showFps = !!value;
     }
-    if (!state.showFps && state.fpsDisplay) {
-      if (state.fpsDisplay.parentNode) {
-        state.fpsDisplay.parentNode.removeChild(state.fpsDisplay);
+    if (!this.showFps && this.fpsDisplay) {
+      if (this.fpsDisplay.parentNode) {
+        this.fpsDisplay.parentNode.removeChild(this.fpsDisplay);
       }
-      state.fpsDisplay = null;
+      this.fpsDisplay = null;
     }
-  },
-isShowFps() {
-    return state.showFps;
-  },
-setPreloadAll(all) {
+  }
+  isShowFps() {
+    return this.showFps;
+  }
+  setPreloadAll(all) {
     if (typeof all === 'string') {
       try {
-        state.preloadAll = parseBoolean(all);
+        this.isPreloadAll = parseBoolean(all);
       } catch (e) {
         console.error('illegal value for preload all', all, e);
         return;
       }
     } else {
-      state.preloadAll = !!all;
+      this.isPreloadAll = !!all;
     }
-  },
-isPreloadAll() {
-    return state.preloadAll;
-  },
-setShowLoadProgress(show) {
+  }
+  setShowLoadProgress(show) {
     if (typeof show === 'string') {
       try {
-        state.showLoadProgress = parseBoolean(show);
+        this.showLoadProgress = parseBoolean(show);
       } catch (e) {
         console.error(e);
         return;
       }
     } else {
-      state.showLoadProgress = !!show;
+      this.showLoadProgress = !!show;
     }
-  },
-isShowLoadProgress() {
-    return state.showLoadProgress;
-  },
-getFadeDuration() {
-    return state.fadeDuration;
-  },
-setFadeDuration(ms) {
-    state.fadeDuration = Number(ms);
-  },
-running() {
-    return state.timer !== null;
-  },
-ponies() {
-    return state.ponies;
-  },
-loadConfig(config, data) {
+  }
+  isShowLoadProgress() {
+    return this.showLoadProgress;
+  }
+  getFadeDuration() {
+    return this.fadeDuration;
+  }
+  setFadeDuration(ms) {
+    this.fadeDuration = Number(ms);
+  }
+  running() {
+    return this.timer !== null;
+  }
+  loadConfig(config, data) {
     if ('baseurl' in config) {
       this.setBaseUrl(config.baseurl);
     }
@@ -411,8 +644,8 @@ loadConfig(config, data) {
     if ('showFps' in config) {
       this.setShowFps(config.showFps);
     }
-    if ('preloadAll' in config) {
-      this.setPreloadAll(config.preloadAll);
+    if ('isPreloadAll' in config) {
+      this.setPreloadAll(config.isPreloadAll);
     }
     if ('showLoadProgress' in config) {
       this.setShowLoadProgress(config.showLoadProgress);
@@ -424,8 +657,8 @@ loadConfig(config, data) {
       this.addPonies(data);
     }
     if (config.spawn) {
-      for (const [name, pony] of Object.entries(config.spawn)) {
-        this.spawn(name, pony);
+      for (const [name, num] of Object.entries(config.spawn)) {
+        this.spawn(name, num as number);
       }
     }
     if ('spawnRandom' in config) {
@@ -434,16 +667,16 @@ loadConfig(config, data) {
     if (config.onload) {
       if (Array.isArray(config.onload)) {
         for (let i = 0, n = config.onload.length; i < n; i++) {
-          onload(config.onload[i]);
+          this.onload(config.onload[i]);
         }
       } else {
-        onload(config.onload);
+        this.onload(config.onload);
       }
     }
-    if (config.autostart && state.timer === null) {
+    if (config.autostart && this.timer === null) {
       this.start();
     }
-  },
+  }
   // currently excluding ponies and interactions
   dumpConfig() {
     const config: Config = {
@@ -457,13 +690,13 @@ loadConfig(config, data) {
       interactionInterval: this.getInteractionInterval(),
       audioEnabled: this.isAudioEnabled(),
       showFps: this.isShowFps(),
-      preloadAll: this.isPreloadAll(),
+      isPreloadAll: this.isPreloadAll,
       showLoadProgress: this.isShowLoadProgress(),
       fadeDuration: this.getFadeDuration(),
       // TODO: optionally dump ponies and interactions
       spawn: {}
     };
-    for (const [_, pony] of state.ponies.entries()) {
+    for (const [_, pony] of this.ponies.entries()) {
       if (pony.instances.length > 0) {
         config.spawn[pony.name] = pony.instances.length;
       }
@@ -471,6 +704,6 @@ loadConfig(config, data) {
 
     return config;
   }
-};
+}
 
-export default BrowserPonies;
+export default new BrowserPonies();

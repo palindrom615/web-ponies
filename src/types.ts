@@ -103,8 +103,10 @@ export type Config = {
   interactionInterval: number
   audioEnabled: boolean;
   showFps: boolean;
-  preloadAll: boolean;
+  isPreloadAll: boolean;
   showLoadProgress: boolean;
   fadeDuration: number;
-  spawn: any;
+  spawn: {
+    [name: string]: number;
+  }
 };

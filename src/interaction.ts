@@ -1,4 +1,4 @@
-import state from './globalState';
+import state from './index';
 import { Pos } from './types';
 import { distance } from './utils';
 

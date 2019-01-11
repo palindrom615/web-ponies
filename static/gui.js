@@ -1,4 +1,4 @@
-import BrowserPonies from '../src';
+import BrowserPonies from '../src/index';
 import { observe, tag, partial } from '../src/utils';
 
 let add = function (element, arg) {
@@ -99,7 +99,7 @@ export const init = () => {
   $('showfps').checked = BrowserPonies.isShowFps();
 
   let list = $('ponylist');
-  let ponies = BrowserPonies.ponies();
+  let ponies = BrowserPonies.ponies;
   let names = Array.from(ponies.keys());
 
   names.sort();
@@ -372,7 +372,7 @@ function updateConfig() {
   BrowserPonies.setDontSpeak(config.dontSpeak);
 
   let random = config.spawnRandom || 0;
-  let ponies = BrowserPonies.ponies();
+  let ponies = BrowserPonies.ponies;
   for (let name in ponies) {
     let pony = ponies[name];
     let count = config.spawn[name] || 0;

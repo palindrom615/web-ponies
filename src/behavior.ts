@@ -2,7 +2,7 @@ import urlJoin from 'proper-url-join';
 
 import CIMap from './cimap';
 import Effect from './effect';
-import state from './globalState';
+import state from './index';
 import Pony from './pony';
 import Speech from './speech';
 import { AllowedMoves, Size } from './types';
