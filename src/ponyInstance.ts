@@ -1,7 +1,7 @@
 import Behavior from './behavior';
 import { BaseZIndex } from './constants';
 import EffectInstance from './effectInstance';
-import state from './index';
+import { WebPonies } from './index';
 import Instance from './instance';
 import Interaction from './interaction';
 import Pony from './pony';
@@ -37,8 +37,11 @@ export default class PonyInstance extends Instance {
 
   interactionInterval: number;
 
-  constructor(pony, ponies) {
+  webPonyRef: WebPonies;
+
+  constructor(pony, ponies, webPony: WebPonies) {
     super();
+    this.webPonyRef = webPony;
     this.ponies = ponies;
 
     this.pony = pony;
@@ -129,10 +132,10 @@ export default class PonyInstance extends Instance {
       },
       onmousedown: (event) => {
         if (event.button === 0) {
-          state.dragged = this;
+          this.webPonyRef.dragged = this;
           this.mouseover = true;
           // timer === null means paused/not running
-          if (state.timer !== null) {
+          if (this.webPonyRef.timer !== null) {
             this.nextBehavior(true);
           }
           event.preventDefault();
@@ -143,7 +146,7 @@ export default class PonyInstance extends Instance {
           this.mouseover = true;
           // timer === null means paused/not runnung
           if (
-            state.timer !== null &&
+            this.webPonyRef.timer !== null &&
             !this.isMouseOverOrDragging() &&
             (this.canMouseOver() || this.canDrag())
           ) {
@@ -201,18 +204,18 @@ export default class PonyInstance extends Instance {
     const currentTime = Date.now();
     if (this.effects) {
       for (let i = 0, n = this.effects.length; i < n; ++i) {
-        state.removing.push({
+        this.webPonyRef.removing.push({
           at: currentTime,
           element: this.effects[i].img
         });
       }
     }
-    state.removing.push({
+    this.webPonyRef.removing.push({
       at: currentTime,
       element: this.img
     });
     removeAll(this.pony.instances, this);
-    removeAll(state.instances, this);
+    removeAll(this.webPonyRef.instances, this);
   }
   clear() {
     if (this.effects) {
@@ -253,7 +256,7 @@ export default class PonyInstance extends Instance {
     this.interactionTargets = targets;
   }
   speak(currentTime, speech) {
-    if (state.dontSpeak) { return; }
+    if (this.webPonyRef.dontSpeak) { return; }
     if (speech.text) {
       const duration: number = Math.max(speech.text.length * 150, 1000);
       const remove: RemoveQueue = { at: currentTime + duration, element: null };
@@ -286,18 +289,18 @@ export default class PonyInstance extends Instance {
       );
       remove.element = text;
       const rect = this.topLeftRect();
-      state.overlay.appendChild(text);
+      this.webPonyRef.overlay.appendChild(text);
       const x = Math.round(rect.x + rect.width * 0.5 - text.offsetWidth * 0.5);
       const y = rect.y + rect.height;
       text.style.left = x + 'px';
       text.style.top = y + 'px';
       text.style.visibility = '';
-      state.removing.push(remove);
+      this.webPonyRef.removing.push(remove);
       text = null;
     }
-    if (state.audioEnabled && speech.files) {
+    if (this.webPonyRef.audioEnabled && speech.files) {
       const audio = createAudio(speech.files);
-      audio.volume = state.volume;
+      audio.volume = this.webPonyRef.config.volume;
       audio.play();
     }
   }
@@ -341,7 +344,7 @@ export default class PonyInstance extends Instance {
       const dx = dest.x - curr.x;
       const dy = dest.y - curr.y;
       const tdist =
-        this.currentBehavior.speed * passedTime * 0.01 * state.globalSpeed;
+        this.currentBehavior.speed * passedTime * 0.01 * this.webPonyRef.globalSpeed;
 
       if (tdist >= dist) {
         pos = dest;
@@ -381,7 +384,7 @@ export default class PonyInstance extends Instance {
         ++i;
       } else {
         this.effects.splice(i, 1);
-        state.removing.push({
+        this.webPonyRef.removing.push({
           element: effect.img,
           at: currentTime
         });
@@ -392,8 +395,8 @@ export default class PonyInstance extends Instance {
     for (let i = 0, n = this.repeating.length; i < n; ++i) {
       const what = this.repeating[i];
       if (what.at <= currentTime) {
-        const inst = new EffectInstance(this, currentTime, what.effect);
-        state.overlay.appendChild(inst.img);
+        const inst = new EffectInstance(this, currentTime, what.effect, this.webPonyRef);
+        this.webPonyRef.overlay.appendChild(inst.img);
         inst.updatePosition();
         this.effects.push(inst);
         what.at += what.effect.delay * 1000;
@@ -496,7 +499,7 @@ export default class PonyInstance extends Instance {
     const pony = this.ponies.get(name);
 
     if (!pony) {
-      for (const inst of state.instances) {
+      for (const inst of this.webPonyRef.instances) {
         if (!this.loops(inst)) {
           for (let j = 0, m = inst.effects.length; j < m; ++j) {
             const effect: EffectInstance = inst.effects[j];
@@ -580,7 +583,7 @@ export default class PonyInstance extends Instance {
       if (inst.effect.duration) {
         neweffects.push(inst);
       } else {
-        state.removing.push({
+        this.webPonyRef.removing.push({
           element: inst.img,
           at: this.startTime
         });
@@ -610,7 +613,7 @@ export default class PonyInstance extends Instance {
     if (behavior.speakstart) {
       this.speak(this.startTime, behavior.speakstart);
     } else if (!spoke && !this.following && !this.currentInteraction) {
-      this.speakRandom(this.startTime, state.speakProbability);
+      this.speakRandom(this.startTime, this.webPonyRef.speakProbability);
     }
 
     const pos = this.position();
@@ -729,7 +732,7 @@ export default class PonyInstance extends Instance {
         }
 
         // speed is in pixels/100ms, duration is in sec
-        const dist = behavior.speed * duration * 100 * state.globalSpeed;
+        const dist = behavior.speed * duration * 100 * this.webPonyRef.globalSpeed;
 
         let a;
         switch (
@@ -815,8 +818,8 @@ export default class PonyInstance extends Instance {
 
     this.repeating = [];
     for (const effect of behavior.effects) {
-      const inst = new EffectInstance(this, this.startTime, effect);
-      state.overlay.appendChild(inst.img);
+      const inst = new EffectInstance(this, this.startTime, effect, this.webPonyRef);
+      this.webPonyRef.overlay.appendChild(inst.img);
       inst.updatePosition();
       neweffects.push(inst);
 
@@ -855,7 +858,7 @@ export default class PonyInstance extends Instance {
     let behaviors;
     const currentGroup = this.currentBehavior ? this.currentBehavior.group : 0;
 
-    if (this === state.dragged && this.canDrag()) {
+    if (this === this.webPonyRef.dragged && this.canDrag()) {
       behaviors = this.pony.draggedBehaviors;
     } else if (this.mouseover && this.canMouseOver()) {
       behaviors = this.pony.mouseoverBehaviors;

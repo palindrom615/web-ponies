@@ -1,6 +1,6 @@
 import { BaseZIndex } from './constants';
 import Effect from './effect';
-import state from './index';
+import { WebPonies } from './index';
 import Instance from './instance';
 import PonyInstance from './ponyInstance';
 import { Locations, Pos, Size } from './types';
@@ -14,12 +14,15 @@ export default class EffectInstance extends Instance {
   rightcenter: Locations;
   leftcenter: Locations;
 
-  constructor(pony, startTime, effect) {
+  webPonyRef: WebPonies;
+
+  constructor(pony, startTime, effect, webPony: WebPonies) {
     super();
+    this.webPonyRef = webPony;
     this.pony = pony;
     this.startTime = startTime;
     let duration = effect.duration * 1000;
-    duration = Math.max(duration - state.fadeDuration, state.fadeDuration);
+    duration = Math.max(duration - this.webPonyRef.config.fadeDuration, this.webPonyRef.config.fadeDuration);
     this.endTime = startTime + duration;
     this.effect = effect;
 

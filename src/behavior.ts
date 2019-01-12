@@ -2,7 +2,7 @@ import urlJoin from 'proper-url-join';
 
 import CIMap from './cimap';
 import Effect from './effect';
-import state from './index';
+import { WebPonies } from './index';
 import Pony from './pony';
 import Speech from './speech';
 import { AllowedMoves, Size } from './types';
@@ -35,7 +35,10 @@ export default class Behavior {
   dontRepeatAnimation?: boolean;
   probability?: number;
 
-  constructor(baseurl: string, behavior: Partial<Behavior>) {
+  webPonyRef: WebPonies;
+
+  constructor(baseurl: string, behavior: Partial<Behavior>, webPony: WebPonies) {
+    this.webPonyRef = webPony;
     for (const entry in behavior) {
       if (behavior.hasOwnProperty(entry)) {
         this[entry] = behavior[entry];
@@ -99,7 +102,7 @@ export default class Behavior {
     });
 
     if (this.rightimage) {
-      state.preloadImage(this.rightimage, (image) => {
+      this.webPonyRef.preloadImage(this.rightimage, (image) => {
         this.rightsize.width = image.width;
         this.rightsize.height = image.height;
         if (this.rightcenter.missing) {
@@ -112,7 +115,7 @@ export default class Behavior {
     }
 
     if (this.leftimage) {
-      state.preloadImage(this.leftimage, (image) => {
+      this.webPonyRef.preloadImage(this.leftimage, (image) => {
         this.leftsize.width = image.width;
         this.leftsize.height = image.height;
         if (this.leftcenter.missing) {

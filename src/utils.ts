@@ -126,14 +126,9 @@ export const createAudio = function(urls) {
   if (typeof urls === 'string') {
     audio.src = urls;
   } else {
-    for (const mimeType in urls) {
-      if (urls.hasOwnProperty(mimeType)) {
-        const source: HTMLElement = tag('source', { src: urls[mimeType] });
-        if (mimeType !== 'audio/x-unknown' && source instanceof HTMLSourceElement) {
-          source.type = mimeType;
-        }
-        audio.appendChild(source);
-      }
+    for (const url of urls) {
+      const source: HTMLElement = tag('source', { src: url, type: `audio/${url.match(/\.(\w+$)/)[1] || 'unknown'}`});
+      audio.appendChild(source);
     }
   }
 

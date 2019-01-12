@@ -1,5 +1,5 @@
 {
-  "autostart": true,
+  "autoStart": true,
   "spawn": {
     "Trixie": 1,
     "Twilight Sparkle": 1

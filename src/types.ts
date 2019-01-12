@@ -108,5 +108,8 @@ export type Config = {
   fadeDuration: number;
   spawn: {
     [name: string]: number;
-  }
+  },
+  spawnRandom?: number;
+  autoStart?: boolean,
+  onload?: any;
 };

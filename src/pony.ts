@@ -3,56 +3,11 @@ import urlJoin from 'proper-url-join';
 import Behavior from './behavior';
 import CIMap from './cimap';
 import Effect from './effect';
-import state from './index';
+import { WebPonies } from './index';
 import Interaction from './interaction';
 import Speech from './speech';
 import { AllowedMoves } from './types';
 import { createAudio, observe, partial } from './utils';
-
-const preloadAudio = function(urls, callback?) {
-  const loadAudio = function(audioUrls) {
-    return function(loader, id, observer) {
-      const audio = (loader.object = createAudio(audioUrls));
-      observe(audio, 'loadeddata', partial(observer, true));
-      observe(audio, 'error', partial(observer, false));
-      observe(audio, 'abort', partial(observer, false));
-      audio.preload = 'auto';
-    };
-  };
-  const equalLength = function(s1: string, s2: string): number {
-    const n = Math.min(s1.length, s2.length);
-    for (let i = 0; i < n; ++i) {
-      if (s1.charAt(i) !== s2.charAt(i)) { return i; }
-    }
-    return n;
-  };
-  let fakeurl;
-  if (typeof urls === 'string') {
-    fakeurl = urls;
-  } else {
-    const list = [];
-    for (const type in urls) {
-      if (urls.hasOwnProperty(type)) {
-        list.push(urls[type]);
-      }
-    }
-    if (list.length === 0) {
-      throw new Error('no audio url to preload');
-    } else if (list.length === 1) {
-      fakeurl = list[0];
-    } else {
-      const common = list.reduce(
-        (acc, val) => acc.slice(0, equalLength(acc, val)),
-        list[0]
-      );
-
-      list.sort();
-      fakeurl = common + '{' + list.join('|') + '}';
-    }
-  }
-
-  state.preload(loadAudio(urls), fakeurl, callback);
-};
 
 export default class Pony {
   baseurl: string;
@@ -72,11 +27,14 @@ export default class Pony {
   speechesMap: CIMap<Speech> = new CIMap();
   instances = [];
 
-  constructor(pony) {
+  webPonyRef: WebPonies;
+
+  constructor(pony, webPony: WebPonies) {
+    this.webPonyRef = webPony;
     if (!pony.behaviors || pony.behaviors.length === 0) {
       throw new Error('Pony ' + pony.name + ' has no behaviors.');
     }
-    this.baseurl = urlJoin(state.globalBaseUrl, encodeURIComponent(pony.baseurl));
+    this.baseurl = urlJoin(this.webPonyRef.globalBaseUrl, encodeURIComponent(pony.baseurl));
     this.name = pony.name;
     if (!this.name) {
       throw new Error(
@@ -116,7 +74,7 @@ export default class Pony {
 
     if ('behaviors' in pony) {
       for (const partialBehavior of pony.behaviors) {
-        const behavior = new Behavior(this.baseurl, partialBehavior);
+        const behavior = new Behavior(this.baseurl, partialBehavior, this.webPonyRef);
         if (this.behaviorsMap.has(behavior.name)) {
           console.warn(
             `${this.baseurl}: Behavior name ${behavior.name} of pony ${
@@ -226,7 +184,7 @@ export default class Pony {
           non-existing behavior ${effect.behavior}`
           );
         } else {
-          this.behaviorsMap.get(behavior).effects.push(new Effect(this.baseurl, effect));
+          this.behaviorsMap.get(behavior).effects.push(new Effect(this.baseurl, effect, this.webPonyRef));
           delete effect.behavior;
         }
       }
@@ -235,10 +193,10 @@ export default class Pony {
   preload() {
     this.behaviors.forEach((behavior) => behavior.preload());
 
-    if (state.audioEnabled) {
+    if (this.webPonyRef.config.audioEnabled) {
       for (const speech of this.speeches) {
         if (speech.files) {
-          preloadAudio(speech.files);
+          this.webPonyRef.preloadAudio(speech.files);
         }
       }
     }
@@ -249,7 +207,7 @@ export default class Pony {
     }
   }
   addInteraction(interaction): Interaction {
-    interaction = new Interaction(interaction);
+    interaction = new Interaction(interaction, this.webPonyRef);
 
     if (interaction.targets.length === 0) {
       console.warn(

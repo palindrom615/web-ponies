@@ -5,6 +5,7 @@ import PonyInstance from './ponyInstance';
 import Progressbar from './progressbar';
 import { Callback, Config, Load, Loader, Pos, RemoveQueue, Resources } from './types';
 import {
+  createAudio,
   observe,
   parseBoolean,
   partial,
@@ -15,7 +16,7 @@ import {
   windowSize
 } from './utils';
 
-class BrowserPonies {
+export class WebPonies {
   overlay: HTMLDivElement = null;
   showFps: boolean = false;
   fpsDisplay: HTMLDivElement = null;
@@ -25,14 +26,12 @@ class BrowserPonies {
   fadeDuration: number = 500;
   instances: PonyInstance[] = [];
   removing: RemoveQueue[] = [];
-  interval = 40;
   dontSpeak: boolean = false;
   globalSpeed = 3; // why is it too slow otherwise?
   audioEnabled: boolean = false;
   interactionInterval = 500;
   speakProbability = 0.1;
   globalBaseUrl: string = BASE_URL.href + '/ponies';
-  volume = 1.0;
 
   lastTime: number = Date.now();
 
@@ -46,11 +45,30 @@ class BrowserPonies {
   showLoadProgress = true;
   ponies: CIMap<Pony> = new CIMap();
 
+  config: Config = {
+    baseurl: BASE_URL.href + '/ponies',
+    speed: 3,
+    speakProbability: 0.1,
+    dontSpeak: false,
+    volume: 1.0,
+    interval: 40,
+    fps: 25,
+    interactionInterval: 500,
+    audioEnabled: true,
+    showFps: false,
+    isPreloadAll: false,
+    showLoadProgress: true,
+    fadeDuration: 500,
+    spawn: {}
+  };
   constructor() {
     this.initEvent();
     this.initProgress();
   }
   onload(cb) {
+    console.log(1);
+    console.log(this.resourceLoadedCount, this.resourceCount);
+
     if (this.resourceLoadedCount === this.resourceCount) {
       cb();
     } else {
@@ -260,6 +278,52 @@ class BrowserPonies {
     this.preload(loadImage, url, callback);
   }
 
+  preloadAudio(urls, callback?) {
+    const loadAudio = (audioUrls) => (loader, id, observer) => {
+      const audio = createAudio(audioUrls);
+      loader.object = audio;
+      console.log(audio);
+      observe(audio, 'loadeddata', partial(observer, true));
+      observe(audio, 'error', partial(observer, false));
+      observe(audio, 'abort', partial(observer, false));
+      audio.preload = 'auto';
+    };
+    const equalLength = (s1: string, s2: string) => {
+      const n = Math.min(s1.length, s2.length);
+      for (let i = 0; i < n; ++i) {
+        if (s1.charAt(i) !== s2.charAt(i)) { return i; }
+      }
+      return n;
+    };
+    let fakeurl;
+    if (typeof urls === 'string') {
+      fakeurl = urls;
+    } else {
+      console.log(urls);
+      const list = [];
+      for (const type in urls) {
+        if (urls.hasOwnProperty(type)) {
+          list.push(urls[type]);
+        }
+      }
+      if (list.length === 0) {
+        throw new Error('no audio url to preload');
+      } else if (list.length === 1) {
+        fakeurl = list[0];
+      } else {
+        const common = list.reduce(
+          (acc, val) => acc.slice(0, equalLength(acc, val)),
+          list[0]
+        );
+
+        list.sort();
+        fakeurl = common + '{' + list.join('|') + '}';
+      }
+    }
+
+    this.preload(loadAudio(urls), urls[1], callback);
+  }
+
   /**
    *
    *
@@ -272,7 +336,7 @@ class BrowserPonies {
       console.error('Pony ' + pony.baseurl + ' already exists.');
       return false;
     }
-    this.ponies.set(pony.baseurl, new Pony(pony));
+    this.ponies.set(pony.baseurl, new Pony(pony, this));
     return true;
   }
   removePonies(ponies: string[]) {
@@ -338,7 +402,7 @@ class BrowserPonies {
     }
     let n = count;
     while (n > 0) {
-      const inst = new PonyInstance(pony, this.ponies);
+      const inst = new PonyInstance(pony, this.ponies, this);
       pony.instances.push(inst);
       if (this.timer !== null) {
         this.onload(() => {
@@ -412,6 +476,7 @@ class BrowserPonies {
       this.preloadSpawned();
     }
     this.onload(() => {
+      console.log(1);
       const overlay = this.getOverlay();
       overlay.innerHTML = '';
       for (const inst of this.instances) {
@@ -461,19 +526,14 @@ class BrowserPonies {
       }
     });
   }
-  setInterval(ms) {
-    ms = parseInt(ms, 10);
-    if (isNaN(ms)) {
-      console.error('unexpected NaN value for interval');
-    } else if (this.interval !== ms) {
-      this.interval = ms;
-    }
+  set interval(ms: number) {
+    this.config.fps = 1000 / ms;
   }
-  getInterval() {
-    return this.interval;
+  get interval() {
+    return 1000 / this.config.fps;
   }
   setFps(fps) {
-    this.setInterval(1000 / Number(fps));
+    this.config.fps = fps;
   }
   getFps() {
     return 1000 / this.interval;
@@ -505,19 +565,6 @@ class BrowserPonies {
   }
   isDontSpeak() {
     return this.dontSpeak;
-  }
-  setVolume(value) {
-    value = Number(value);
-    if (isNaN(value)) {
-      console.error('unexpected NaN value for volume');
-    } else if (value < 0 || value > 1) {
-      console.error('volume out of range', value);
-    } else {
-      this.volume = value;
-    }
-  }
-  getVolume() {
-    return this.volume;
   }
   setBaseUrl(url) {
     this.globalBaseUrl = url;
@@ -613,7 +660,7 @@ class BrowserPonies {
   running() {
     return this.timer !== null;
   }
-  loadConfig(config, data) {
+  loadConfig(config: Partial<Config>, data) {
     if ('baseurl' in config) {
       this.setBaseUrl(config.baseurl);
     }
@@ -627,10 +674,10 @@ class BrowserPonies {
       this.setDontSpeak(config.dontSpeak);
     }
     if ('volume' in config) {
-      this.setVolume(config.volume);
+      this.config.volume = config.volume;
     }
     if ('interval' in config) {
-      this.setInterval(config.interval);
+      this.interval = config.interval;
     }
     if ('fps' in config) {
       this.setFps(config.fps);
@@ -658,7 +705,7 @@ class BrowserPonies {
     }
     if (config.spawn) {
       for (const [name, num] of Object.entries(config.spawn)) {
-        this.spawn(name, num as number);
+        this.spawn(name, num);
       }
     }
     if ('spawnRandom' in config) {
@@ -673,7 +720,7 @@ class BrowserPonies {
         this.onload(config.onload);
       }
     }
-    if (config.autostart && this.timer === null) {
+    if (config.autoStart && this.timer === null) {
       this.start();
     }
   }
@@ -684,8 +731,8 @@ class BrowserPonies {
       speed: this.getSpeed(),
       speakProbability: this.getSpeakProbability(),
       dontSpeak: this.isDontSpeak(),
-      volume: this.getVolume(),
-      interval: this.getInterval(),
+      volume: this.config.volume,
+      interval: this.interval,
       fps: this.getFps(),
       interactionInterval: this.getInteractionInterval(),
       audioEnabled: this.isAudioEnabled(),
@@ -705,5 +752,3 @@ class BrowserPonies {
     return config;
   }
 }
-
-export default new BrowserPonies();

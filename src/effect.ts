@@ -1,6 +1,6 @@
 import urlJoin from 'proper-url-join';
 
-import state from './index';
+import { WebPonies } from './index';
 import { Locations, Pos, Size } from './types';
 
 const parseLocation = function(value: string): string {
@@ -32,7 +32,10 @@ export default class Effect {
   leftloc?;
   leftcenter?;
 
-  constructor(baseurl: string, effect: Partial<Effect>) {
+  webPonyRef: WebPonies;
+
+  constructor(baseurl: string, effect: Partial<Effect>, webPony: WebPonies) {
+    this.webPonyRef = webPony;
     for (const entry in effect) {
       if (effect.hasOwnProperty(entry)) {
         this[entry] = effect[entry];
@@ -51,7 +54,7 @@ export default class Effect {
   }
   preload() {
     if (this.rightimage) {
-      state.preloadImage(this.rightimage, (image) => {
+      this.webPonyRef.preloadImage(this.rightimage, (image) => {
         this.rightsize.width = image.width;
         this.rightsize.height = image.height;
         this.rightCenterPoint = {
@@ -62,7 +65,7 @@ export default class Effect {
     }
 
     if (this.leftimage) {
-      state.preloadImage(this.leftimage, (image) => {
+      this.webPonyRef.preloadImage(this.leftimage, (image) => {
         this.leftsize.width = image.width;
         this.leftsize.height = image.height;
         this.leftCenterPoint = {

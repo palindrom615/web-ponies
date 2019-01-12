@@ -1,4 +1,4 @@
-import state from './index';
+import { WebPonies } from './index';
 import { Pos } from './types';
 import { distance } from './utils';
 
@@ -12,7 +12,10 @@ export default class Interaction {
   targets: string[] = [];
   behaviors: string[];
 
-  constructor(interaction: Partial<Interaction>, ponies = {}) {
+  webPonyRef: WebPonies;
+
+  constructor(interaction: Partial<Interaction>, webPony: WebPonies) {
+    this.webPonyRef = webPony;
     this.name = interaction.name;
     this.probability = interaction.probability;
     this.proximity =
@@ -44,7 +47,7 @@ export default class Interaction {
     for (const pony of this.targets) {
       let instance = null;
       let instanceDist = Infinity;
-      for (const inst of state.ponies.get(pony).instances) {
+      for (const inst of this.webPonyRef.ponies.get(pony).instances) {
         const dist: number = distance(pos, inst.position());
         if (dist <= this.proximity && dist < instanceDist) {
           instance = inst;
