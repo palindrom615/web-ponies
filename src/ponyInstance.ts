@@ -256,7 +256,7 @@ export default class PonyInstance extends Instance {
     this.interactionTargets = targets;
   }
   speak(currentTime, speech) {
-    if (this.webPonyRef.dontSpeak) { return; }
+    if (this.webPonyRef.config.dontSpeak) { return; }
     if (speech.text) {
       const duration: number = Math.max(speech.text.length * 150, 1000);
       const remove: RemoveQueue = { at: currentTime + duration, element: null };
@@ -298,7 +298,7 @@ export default class PonyInstance extends Instance {
       this.webPonyRef.removing.push(remove);
       text = null;
     }
-    if (this.webPonyRef.audioEnabled && speech.files) {
+    if (this.webPonyRef.config.audioEnabled && speech.files) {
       const audio = createAudio(speech.files);
       audio.volume = this.webPonyRef.config.volume;
       audio.play();
@@ -344,7 +344,7 @@ export default class PonyInstance extends Instance {
       const dx = dest.x - curr.x;
       const dy = dest.y - curr.y;
       const tdist =
-        this.currentBehavior.speed * passedTime * 0.01 * this.webPonyRef.globalSpeed;
+        this.currentBehavior.speed * passedTime * 0.01 * this.webPonyRef.config.speed;
 
       if (tdist >= dist) {
         pos = dest;
@@ -613,7 +613,7 @@ export default class PonyInstance extends Instance {
     if (behavior.speakstart) {
       this.speak(this.startTime, behavior.speakstart);
     } else if (!spoke && !this.following && !this.currentInteraction) {
-      this.speakRandom(this.startTime, this.webPonyRef.speakProbability);
+      this.speakRandom(this.startTime, this.webPonyRef.config.speakProbability);
     }
 
     const pos = this.position();
@@ -732,7 +732,7 @@ export default class PonyInstance extends Instance {
         }
 
         // speed is in pixels/100ms, duration is in sec
-        const dist = behavior.speed * duration * 100 * this.webPonyRef.globalSpeed;
+        const dist = behavior.speed * duration * 100 * this.webPonyRef.config.speed;
 
         let a;
         switch (

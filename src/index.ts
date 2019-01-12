@@ -18,20 +18,12 @@ import {
 
 export class WebPonies {
   overlay: HTMLDivElement = null;
-  showFps: boolean = false;
   fpsDisplay: HTMLDivElement = null;
   mousePosition: Pos = null;
   dragged: PonyInstance = null;
   timer: number = null;
-  fadeDuration: number = 500;
   instances: PonyInstance[] = [];
   removing: RemoveQueue[] = [];
-  dontSpeak: boolean = false;
-  globalSpeed = 3; // why is it too slow otherwise?
-  audioEnabled: boolean = false;
-  interactionInterval = 500;
-  speakProbability = 0.1;
-  globalBaseUrl: string = BASE_URL.href + '/ponies';
 
   lastTime: number = Date.now();
 
@@ -41,8 +33,6 @@ export class WebPonies {
   onloadCallbacks: Callback[] = [];
   onProgressCallbacks: Callback[] = [];
 
-  isPreloadAll = false;
-  showLoadProgress = true;
   ponies: CIMap<Pony> = new CIMap();
 
   config: Config = {
@@ -66,9 +56,6 @@ export class WebPonies {
     this.initProgress();
   }
   onload(cb) {
-    console.log(1);
-    console.log(this.resourceLoadedCount, this.resourceCount);
-
     if (this.resourceLoadedCount === this.resourceCount) {
       cb();
     } else {
@@ -149,7 +136,7 @@ export class WebPonies {
     const progressbar: Progressbar = new Progressbar();
 
     onprogress((loaded, total) => {
-      if (this.showLoadProgress) {
+      if (this.config.showLoadProgress) {
         progressbar.renew(loaded, total);
       }
     });
@@ -175,20 +162,20 @@ export class WebPonies {
 
     // check if something needs to be removed:
     this.removing = this.removing.filter((what) => {
-      if (what.at + this.fadeDuration <= currentTime) {
+      if (what.at + this.config.fadeDuration <= currentTime) {
         if (what.element.parentNode) {
           what.element.parentNode.removeChild(what.element);
         }
       } else if (what.at <= currentTime) {
         setOpacity(
           what.element,
-          1 - (currentTime - what.at) / this.fadeDuration
+          1 - (currentTime - what.at) / this.config.fadeDuration
         );
       }
-      return what.at + this.fadeDuration > currentTime;
+      return what.at + this.config.fadeDuration > currentTime;
     });
 
-    if (this.showFps) {
+    if (this.config.showFps) {
       if (!this.fpsDisplay) {
         const overlay = this.getOverlay();
         this.fpsDisplay = tag('div', {
@@ -208,7 +195,7 @@ export class WebPonies {
 
     this.timer = window.setTimeout(
       this.tick.bind(this),
-      Math.max(this.interval - (currentTime - Date.now()), 0)
+      Math.max(this.config.interval - (currentTime - Date.now()), 0)
     );
 
     this.lastTime = currentTime;
@@ -282,7 +269,6 @@ export class WebPonies {
     const loadAudio = (audioUrls) => (loader, id, observer) => {
       const audio = createAudio(audioUrls);
       loader.object = audio;
-      console.log(audio);
       observe(audio, 'loadeddata', partial(observer, true));
       observe(audio, 'error', partial(observer, false));
       observe(audio, 'abort', partial(observer, false));
@@ -299,7 +285,6 @@ export class WebPonies {
     if (typeof urls === 'string') {
       fakeurl = urls;
     } else {
-      console.log(urls);
       const list = [];
       for (const type in urls) {
         if (urls.hasOwnProperty(type)) {
@@ -470,13 +455,12 @@ export class WebPonies {
     }
   }
   start() {
-    if (this.isPreloadAll) {
+    if (this.config.isPreloadAll) {
       this.preloadAll();
     } else {
       this.preloadSpawned();
     }
     this.onload(() => {
-      console.log(1);
       const overlay = this.getOverlay();
       overlay.innerHTML = '';
       for (const inst of this.instances) {
@@ -514,7 +498,7 @@ export class WebPonies {
     }
   }
   resume() {
-    if (this.isPreloadAll) {
+    if (this.config.isPreloadAll) {
       this.preloadAll();
     } else {
       this.preloadSpawned();
@@ -526,58 +510,13 @@ export class WebPonies {
       }
     });
   }
-  set interval(ms: number) {
-    this.config.fps = 1000 / ms;
+  set fps(fps: number) {
+    this.config.interval = 1000 / fps;
   }
-  get interval() {
-    return 1000 / this.config.fps;
+  get fps() {
+    return 1000 / this.config.interval;
   }
-  setFps(fps) {
-    this.config.fps = fps;
-  }
-  getFps() {
-    return 1000 / this.interval;
-  }
-  setInteractionInterval(ms) {
-    ms = Number(ms);
-    if (isNaN(ms)) {
-      console.error('unexpected NaN value for interaction interval');
-    } else {
-      this.interactionInterval = ms;
-    }
-  }
-  getInteractionInterval() {
-    return this.interactionInterval;
-  }
-  setSpeakProbability(probability) {
-    probability = Number(probability);
-    if (isNaN(probability)) {
-      console.error('unexpected NaN value for speak probability');
-    } else {
-      this.speakProbability = probability;
-    }
-  }
-  getSpeakProbability() {
-    return this.speakProbability;
-  }
-  setDontSpeak(value) {
-    this.dontSpeak = !!value;
-  }
-  isDontSpeak() {
-    return this.dontSpeak;
-  }
-  setBaseUrl(url) {
-    this.globalBaseUrl = url;
-  }
-  getBaseUrl() {
-    return this.globalBaseUrl;
-  }
-  setSpeed(speed) {
-    this.globalSpeed = Number(speed);
-  }
-  getSpeed() {
-    return this.globalSpeed;
-  }
+
   setAudioEnabled(enabled) {
     if (typeof enabled === 'string') {
       try {
@@ -589,116 +528,48 @@ export class WebPonies {
     } else {
       enabled = !!enabled;
     }
-    if (this.audioEnabled !== enabled && enabled) {
-      this.audioEnabled = enabled;
-      if (this.isPreloadAll) {
+    if (this.config.audioEnabled !== enabled && enabled) {
+      this.config.audioEnabled = enabled;
+      if (this.config.isPreloadAll) {
         this.preloadAll();
       } else {
         this.preloadSpawned();
       }
     } else {
-      this.audioEnabled = enabled;
+      this.config.audioEnabled = enabled;
     }
-  }
-  isAudioEnabled() {
-    return this.audioEnabled;
   }
   setShowFps(value) {
     if (typeof value === 'string') {
       try {
-        this.showFps = parseBoolean(value);
+        this.config.showFps = parseBoolean(value);
       } catch (e) {
         console.error('illegal value for show fps', value, e);
         return;
       }
     } else {
-      this.showFps = !!value;
+      this.config.showFps = !!value;
     }
-    if (!this.showFps && this.fpsDisplay) {
+    if (!this.config.showFps && this.fpsDisplay) {
       if (this.fpsDisplay.parentNode) {
         this.fpsDisplay.parentNode.removeChild(this.fpsDisplay);
       }
       this.fpsDisplay = null;
     }
   }
-  isShowFps() {
-    return this.showFps;
-  }
-  setPreloadAll(all) {
-    if (typeof all === 'string') {
-      try {
-        this.isPreloadAll = parseBoolean(all);
-      } catch (e) {
-        console.error('illegal value for preload all', all, e);
-        return;
-      }
-    } else {
-      this.isPreloadAll = !!all;
-    }
-  }
-  setShowLoadProgress(show) {
-    if (typeof show === 'string') {
-      try {
-        this.showLoadProgress = parseBoolean(show);
-      } catch (e) {
-        console.error(e);
-        return;
-      }
-    } else {
-      this.showLoadProgress = !!show;
-    }
-  }
-  isShowLoadProgress() {
-    return this.showLoadProgress;
-  }
-  getFadeDuration() {
-    return this.fadeDuration;
-  }
-  setFadeDuration(ms) {
-    this.fadeDuration = Number(ms);
-  }
   running() {
     return this.timer !== null;
   }
   loadConfig(config: Partial<Config>, data) {
-    if ('baseurl' in config) {
-      this.setBaseUrl(config.baseurl);
-    }
-    if ('speed' in config) {
-      this.setSpeed(config.speed);
-    }
-    if ('speakProbability' in config) {
-      this.setSpeakProbability(config.speakProbability);
-    }
-    if ('dontSpeak' in config) {
-      this.setDontSpeak(config.dontSpeak);
-    }
-    if ('volume' in config) {
-      this.config.volume = config.volume;
-    }
-    if ('interval' in config) {
-      this.interval = config.interval;
-    }
-    if ('fps' in config) {
-      this.setFps(config.fps);
-    }
-    if ('interactionInterval' in config) {
-      this.setInteractionInterval(config.interactionInterval);
-    }
+    this.config = {
+      ...this.config,
+      ...config
+    };
     if ('audioEnabled' in config) {
       this.setAudioEnabled(config.audioEnabled);
     }
     if ('showFps' in config) {
       this.setShowFps(config.showFps);
-    }
-    if ('isPreloadAll' in config) {
-      this.setPreloadAll(config.isPreloadAll);
-    }
-    if ('showLoadProgress' in config) {
-      this.setShowLoadProgress(config.showLoadProgress);
-    }
-    if ('fadeDuration' in config) {
-      this.setFadeDuration(config.fadeDuration);
     }
     if (data) {
       this.addPonies(data);
@@ -726,26 +597,10 @@ export class WebPonies {
   }
   // currently excluding ponies and interactions
   dumpConfig() {
-    const config: Config = {
-      baseurl: this.getBaseUrl(),
-      speed: this.getSpeed(),
-      speakProbability: this.getSpeakProbability(),
-      dontSpeak: this.isDontSpeak(),
-      volume: this.config.volume,
-      interval: this.interval,
-      fps: this.getFps(),
-      interactionInterval: this.getInteractionInterval(),
-      audioEnabled: this.isAudioEnabled(),
-      showFps: this.isShowFps(),
-      isPreloadAll: this.isPreloadAll,
-      showLoadProgress: this.isShowLoadProgress(),
-      fadeDuration: this.getFadeDuration(),
-      // TODO: optionally dump ponies and interactions
-      spawn: {}
-    };
-    for (const [_, pony] of this.ponies.entries()) {
+    const config: Config = { ...this.config };
+    for (const [name, pony] of this.ponies.entries()) {
       if (pony.instances.length > 0) {
-        config.spawn[pony.name] = pony.instances.length;
+        config.spawn[name] = pony.instances.length;
       }
     }
 

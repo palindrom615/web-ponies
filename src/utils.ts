@@ -120,7 +120,7 @@ export const clipToScreen = function(rect: Rect): Pos {
   return { x: Math.round(x), y: Math.round(y) };
 };
 
-export const createAudio = function(urls) {
+export const createAudio = function(urls: string | string[]) {
   const audio = new Audio();
 
   if (typeof urls === 'string') {

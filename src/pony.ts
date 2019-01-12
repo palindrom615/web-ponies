@@ -34,7 +34,7 @@ export default class Pony {
     if (!pony.behaviors || pony.behaviors.length === 0) {
       throw new Error('Pony ' + pony.name + ' has no behaviors.');
     }
-    this.baseurl = urlJoin(this.webPonyRef.globalBaseUrl, encodeURIComponent(pony.baseurl));
+    this.baseurl = urlJoin(this.webPonyRef.config.baseurl, encodeURIComponent(pony.baseurl));
     this.name = pony.name;
     if (!this.name) {
       throw new Error(

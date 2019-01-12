@@ -245,16 +245,16 @@ function toggleBrowserPoniesToBackground() {
   }
 }
 const init = () => {
-  $('volume').value = Math.round(BrowserPonies.volume * 100);
-  $('fade').value = BrowserPonies.getFadeDuration() / 1000
-  $('fps').value = BrowserPonies.getFps();
+  $('volume').value = Math.round(BrowserPonies.config.volume * 100);
+  $('fade').value = BrowserPonies.config.fadeDuration / 1000
+  $('fps').value = BrowserPonies.fps;
 
-  $('speak').value = Math.round(BrowserPonies.getSpeakProbability() * 100)
-  $('speed').value = BrowserPonies.getSpeed();
-  $('progressbar').checked = BrowserPonies.isShowLoadProgress();
-  $('enableaudio').checked = BrowserPonies.isAudioEnabled();
-  $('dontspeak').checked = BrowserPonies.isDontSpeak();
-  $('showfps').checked = BrowserPonies.isShowFps();
+  $('speak').value = Math.round(BrowserPonies.config.speakProbability * 100)
+  $('speed').value = BrowserPonies.config.speed;
+  $('progressbar').checked = BrowserPonies.config.showLoadProgress;
+  $('enableaudio').checked = BrowserPonies.config.audioEnabled;
+  $('dontspeak').checked = BrowserPonies.config.dontSpeak;
+  $('showfps').checked = BrowserPonies.config.showFps;
 
   let list = $('ponylist');
   let ponies = BrowserPonies.ponies;
@@ -316,15 +316,11 @@ const init = () => {
 function updateConfig() {
   let config = dumpConfig();
 
-  BrowserPonies.volume = config.volume;
-  BrowserPonies.setFadeDuration(config.fadeDuration);
-  BrowserPonies.setFps(config.fps);
-  BrowserPonies.setSpeed(config.speed);
-  BrowserPonies.setAudioEnabled(config.audioEnabled);
+  BrowserPonies.config = {
+    ...BrowserPonies.config,
+    ...config
+  }
   BrowserPonies.setShowFps(config.showFps);
-  BrowserPonies.setShowLoadProgress(config.showLoadProgress);
-  BrowserPonies.setSpeakProbability(config.speakProbability);
-  BrowserPonies.setDontSpeak(config.dontSpeak);
 
   let random = config.spawnRandom || 0;
   let ponies = BrowserPonies.ponies;
@@ -366,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setAllZero();
   });
   document.getElementById('enableaudio').addEventListener('change', function (e) {
-    BrowserPonies.setAudioEnabled(e.target.checked);
+    BrowserPonies.config.audioEnabled = e.target.checked;
   });
   document.getElementById('showfps').addEventListener('change', function () {
     updateConfig();
@@ -378,19 +374,19 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDontSpeak(this.checked);
   });
   document.getElementById('speed').addEventListener('change', (e) => {
-    BrowserPonies.setSpeed(e.target.value);
+    BrowserPonies.config.speed = e.target.value;
   })
   document.getElementById('volume').addEventListener('change', (e) => {
-    BrowserPonies.setVolume(e.target.value);
+    BrowserPonies.config.volume = (e.target.value);
   })
   document.getElementById('fps').addEventListener('change', (e) => {
-    BrowserPonies.setFps(e.target.value);
+    BrowserPonies.fps = (e.target.value);
   })
   document.getElementById('speak').addEventListener('change', (e) => {
-    BrowserPonies.setSpeakProbability(e.target.value);
+    BrowserPonies.config.speakProbability = (e.target.value);
   })
   document.getElementById('fade').addEventListener('change', (e) => {
-    BrowserPonies.setFadeDuration(e.target.value);
+    BrowserPonies.config.fadeDuration = (e.target.value);
   })
 });
 
