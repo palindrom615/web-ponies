@@ -1,11 +1,11 @@
-import urlJoin from 'proper-url-join';
+import urlJoin from "proper-url-join";
 
-import CIMap from './cimap';
-import Effect from './effect';
-import { WebPonies } from './index';
-import Pony from './pony';
-import Speech from './speech';
-import { AllowedMoves, Size } from './types';
+import CIMap from "./cimap";
+import Effect from "./effect";
+import { WebPonies } from "./index";
+import Pony from "./pony";
+import Speech from "./speech";
+import { AllowedMoves, Size } from "./types";
 
 export default class Behavior {
   name: string;
@@ -13,10 +13,10 @@ export default class Behavior {
   movement: AllowedMoves = null;
   rightsize: Size = { width: 0, height: 0 };
   rightimage: string;
-  rightcenter: { x: number, y: number, missing?: boolean };
+  rightcenter: { x: number; y: number; missing?: boolean };
   leftsize: Size = { width: 0, height: 0 };
   leftimage: string;
-  leftcenter: { x: number, y: number, missing?: boolean };
+  leftcenter: { x: number; y: number; missing?: boolean };
   effects: Effect[] = [];
   effectsMap: CIMap<Effect> = new CIMap();
   x: number;
@@ -37,29 +37,37 @@ export default class Behavior {
 
   webPonyRef: WebPonies;
 
-  constructor(baseurl: string, behavior: Partial<Behavior>, webPony: WebPonies) {
+  constructor(
+    baseurl: string,
+    behavior: Partial<Behavior>,
+    webPony: WebPonies
+  ) {
     this.webPonyRef = webPony;
     for (const entry in behavior) {
       if (behavior.hasOwnProperty(entry)) {
         this[entry] = behavior[entry];
       }
     }
-    this.movement = AllowedMoves[Object.keys(AllowedMoves)
-      .find((mov) =>
-        mov.toLowerCase() === behavior.movement.replace(/[-_\s]/g, '').toLowerCase()
-      )];
+    this.movement =
+      AllowedMoves[
+        Object.keys(AllowedMoves).find(
+          mov =>
+            mov.toLowerCase() ===
+            behavior.movement.replace(/[-_\s]/g, "").toLowerCase()
+        )
+      ];
 
-    if (!this.name || this.name.toLowerCase() === 'none') {
-      throw new Error(baseurl + ': illegal behavior name ' + this.name);
+    if (!this.name || this.name.toLowerCase() === "none") {
+      throw new Error(baseurl + ": illegal behavior name " + this.name);
     }
 
     if (this.movement === null) {
       throw new Error(
         baseurl +
-        ': illegal movement ' +
-        behavior.movement +
-        ' for behavior ' +
-        behavior.name
+          ": illegal movement " +
+          behavior.movement +
+          " for behavior " +
+          behavior.name
       );
     }
 
@@ -86,7 +94,7 @@ export default class Behavior {
       this.leftcenter = { x: 0, y: 0, missing: true };
     }
 
-    if ('effects' in behavior) {
+    if ("effects" in behavior) {
       for (const effect of behavior.effects) {
         this.effectsMap.set(effect.name, effect);
       }
@@ -94,15 +102,14 @@ export default class Behavior {
   }
   deref(property: string, pony: Pony) {
     this[property] = undefined;
-
   }
   preload() {
-    this.effects.forEach((effect) => {
+    this.effects.forEach(effect => {
       effect.preload();
     });
 
     if (this.rightimage) {
-      this.webPonyRef.preloadImage(this.rightimage, (image) => {
+      this.webPonyRef.preloadImage(this.rightimage, image => {
         this.rightsize.width = image.width;
         this.rightsize.height = image.height;
         if (this.rightcenter.missing) {
@@ -115,7 +122,7 @@ export default class Behavior {
     }
 
     if (this.leftimage) {
-      this.webPonyRef.preloadImage(this.leftimage, (image) => {
+      this.webPonyRef.preloadImage(this.leftimage, image => {
         this.leftsize.width = image.width;
         this.leftsize.height = image.height;
         if (this.leftcenter.missing) {
@@ -128,7 +135,9 @@ export default class Behavior {
     }
   }
   isMoving(): boolean {
-    if (this.follow || this.x || this.x) { return true; }
+    if (this.follow || this.x || this.x) {
+      return true;
+    }
     switch (this.movement) {
       case AllowedMoves.None:
       case AllowedMoves.MouseOver:

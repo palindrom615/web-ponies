@@ -1,6 +1,6 @@
-import { BaseZIndex } from './constants';
-import { Pos, Rect, Size } from './types';
-import { clipToScreen, windowSize } from './utils';
+import { BaseZIndex } from "./constants";
+import { Pos, Rect, Size } from "./types";
+import { clipToScreen, windowSize } from "./utils";
 
 const isOffscreen = function(rectangle: Rect) {
   // rect has origin at center
@@ -32,9 +32,11 @@ export default abstract class Instance {
   setTopLeftPosition(pos: Pos = { x: 0, y: 0 }) {
     this.currentPosition.x = pos.x + this.currentCenter.x;
     this.currentPosition.y = pos.y + this.currentCenter.y;
-    this.img.style.left = Math.round(pos.x) + 'px';
-    this.img.style.top = Math.round(pos.y) + 'px';
-    const zIndex: number = Math.round(BaseZIndex + pos.y + this.currentSize.height);
+    this.img.style.left = Math.round(pos.x) + "px";
+    this.img.style.top = Math.round(pos.y) + "px";
+    const zIndex: number = Math.round(
+      BaseZIndex + pos.y + this.currentSize.height
+    );
     if (this.zIndex !== zIndex) {
       this.img.style.zIndex = String(zIndex);
     }
@@ -43,9 +45,11 @@ export default abstract class Instance {
     const x = (this.currentPosition.x = pos.x);
     const y = (this.currentPosition.y = pos.y);
     const top = Math.round(y - this.currentCenter.y);
-    this.img.style.left = Math.round(x - this.currentCenter.x) + 'px';
-    this.img.style.top = top + 'px';
-    const zIndex: number = Math.round(BaseZIndex + top + this.currentSize.height);
+    this.img.style.left = Math.round(x - this.currentCenter.x) + "px";
+    this.img.style.top = top + "px";
+    const zIndex: number = Math.round(
+      BaseZIndex + top + this.currentSize.height
+    );
     if (this.zIndex !== zIndex) {
       this.img.style.zIndex = String(zIndex);
     }

@@ -1,12 +1,12 @@
-import { WebPonies } from './index';
-import { Pos } from './types';
-import { distance } from './utils';
+import { WebPonies } from "./index";
+import { Pos } from "./types";
+import { distance } from "./utils";
 
 export default class Interaction {
   name: string;
   probability;
-  proximity: number | 'default';
-  activate: 'one' | 'all';
+  proximity: number | "default";
+  activate: "one" | "all";
   delay;
   deploy;
   targets: string[] = [];
@@ -19,7 +19,7 @@ export default class Interaction {
     this.name = interaction.name;
     this.probability = interaction.probability;
     this.proximity =
-      interaction.proximity === 'default' ? 640 : interaction.proximity;
+      interaction.proximity === "default" ? 640 : interaction.proximity;
     this.activate = interaction.activate;
     this.delay = interaction.delay;
     this.behaviors = interaction.behaviors;
@@ -56,18 +56,18 @@ export default class Interaction {
       }
       if (instance) {
         res.push([instanceDist, instance]);
-      } else if (this.activate === 'all') {
+      } else if (this.activate === "all") {
         return null;
       }
     }
     if (res.length === 0) {
       return null;
     }
-    if (this.activate === 'one') {
+    if (this.activate === "one") {
       res.sort((lhs, rhs) => lhs[0] - rhs[0]);
       return [res[0][1]];
     } else {
-      res = res.map((target) => target[1]);
+      res = res.map(target => target[1]);
     }
     return res;
   }

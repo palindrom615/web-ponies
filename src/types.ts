@@ -27,17 +27,17 @@ export enum Movements {
 }
 
 export enum AllowedMoves {
-  None = 'None',
-  HorizontalOnly = 'HorizontalOnly',
-  VerticalOnly = 'VerticalOnly',
-  HorizontalVertical = 'HorizontalVertical',
-  DiagonalOnly = 'DiagonalOnly',
-  DiagonalHorizontal = 'DiagonalHorizontal',
-  DiagonalVertical = 'DiagonalVertical',
-  All = 'All',
-  MouseOver = 'MouseOver',
-  Sleep = 'Sleep',
-  Dragged = 'Dragged'
+  None = "None",
+  HorizontalOnly = "HorizontalOnly",
+  VerticalOnly = "VerticalOnly",
+  HorizontalVertical = "HorizontalVertical",
+  DiagonalOnly = "DiagonalOnly",
+  DiagonalHorizontal = "DiagonalHorizontal",
+  DiagonalVertical = "DiagonalVertical",
+  All = "All",
+  MouseOver = "MouseOver",
+  Sleep = "Sleep",
+  Dragged = "Dragged"
 }
 
 export enum Locations {
@@ -55,18 +55,18 @@ export enum Locations {
 }
 
 export enum AudioMimeTypes {
-  wav = 'audio/wav',
-  webm = 'audio/webm',
-  mpeg = 'audio/mpeg',
-  mpga = 'audio/mpeg',
-  mpg = 'audio/mpeg',
+  wav = "audio/wav",
+  webm = "audio/webm",
+  mpeg = "audio/mpeg",
+  mpga = "audio/mpeg",
+  mpg = "audio/mpeg",
   mp1 = 'audio/mpeg;codecs="mp1"',
   mp2 = 'audio/mpeg;codecs="mp2"',
   mp3 = 'audio/mpeg;codecs="mp3"',
-  mp4 = 'audio/mp4',
-  mp4a = 'audio/mp4',
-  ogg = 'audio/ogg',
-  oga = 'audio/ogg',
+  mp4 = "audio/mp4",
+  mp4a = "audio/mp4",
+  ogg = "audio/ogg",
+  oga = "audio/ogg",
   flac = 'audio/ogg;codecs="flac"',
   spx = 'audio/ogg;codecs="speex"'
 }
@@ -76,7 +76,7 @@ export type RemoveQueue = {
   element: HTMLElement;
 };
 
-export type Callback = ((...args: any[]) => void);
+export type Callback = (...args: any[]) => void;
 
 export type Observer = (isSuccess: boolean) => void;
 
@@ -100,7 +100,7 @@ export type Config = {
   volume: number;
   interval: number;
   fps: number;
-  interactionInterval: number
+  interactionInterval: number;
   audioEnabled: boolean;
   showFps: boolean;
   isPreloadAll: boolean;
@@ -108,8 +108,8 @@ export type Config = {
   fadeDuration: number;
   spawn: {
     [name: string]: number;
-  },
+  };
   spawnRandom?: number;
-  autoStart?: boolean,
+  autoStart?: boolean;
   onload?: any;
 };

@@ -1,6 +1,6 @@
-import urlJoin from 'proper-url-join';
+import urlJoin from "proper-url-join";
 
-import { AudioMimeTypes } from './types';
+import { AudioMimeTypes } from "./types";
 
 export default class Speech {
   name: string;
@@ -22,24 +22,24 @@ export default class Speech {
           let filetype;
           if (ext) {
             ext = ext.toLowerCase();
-            filetype = AudioMimeTypes[ext] || 'audio/x-' + ext;
+            filetype = AudioMimeTypes[ext] || "audio/x-" + ext;
           } else {
-            filetype = 'audio/x-unknown';
+            filetype = "audio/x-unknown";
           }
           if (filetype in speak.files) {
             console.warn(
               baseurl +
-              ': file type ' +
-              filetype +
-              ' of speak line ' +
-              speak.name +
-              ' is not unique.'
+                ": file type " +
+                filetype +
+                " of speak line " +
+                speak.name +
+                " is not unique."
             );
           }
           this.files[filetype] = encodeURIComponent(file);
         }
       }
-      this.files = files ? files.map((file) => urlJoin(baseurl, file)) : [];
+      this.files = files ? files.map(file => urlJoin(baseurl, file)) : [];
     }
   }
 }

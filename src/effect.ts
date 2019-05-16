@@ -1,14 +1,18 @@
-import urlJoin from 'proper-url-join';
+import urlJoin from "proper-url-join";
 
-import { WebPonies } from './index';
-import { Locations, Pos, Size } from './types';
+import { WebPonies } from "./index";
+import { Locations, Pos, Size } from "./types";
 
 const parseLocation = function(value: string): string {
-  const loc = value.replace(/[-_\s]/g, '').toLowerCase();
-  if (Object.keys(Locations).map((location) => location.toLowerCase()).includes(loc)) {
+  const loc = value.replace(/[-_\s]/g, "").toLowerCase();
+  if (
+    Object.keys(Locations)
+      .map(location => location.toLowerCase())
+      .includes(loc)
+  ) {
     return Locations[loc];
   }
-  throw new Error('illegal location: ' + value);
+  throw new Error("illegal location: " + value);
 };
 
 export default class Effect {
@@ -54,7 +58,7 @@ export default class Effect {
   }
   preload() {
     if (this.rightimage) {
-      this.webPonyRef.preloadImage(this.rightimage, (image) => {
+      this.webPonyRef.preloadImage(this.rightimage, image => {
         this.rightsize.width = image.width;
         this.rightsize.height = image.height;
         this.rightCenterPoint = {
@@ -65,7 +69,7 @@ export default class Effect {
     }
 
     if (this.leftimage) {
-      this.webPonyRef.preloadImage(this.leftimage, (image) => {
+      this.webPonyRef.preloadImage(this.leftimage, image => {
         this.leftsize.width = image.width;
         this.leftsize.height = image.height;
         this.leftCenterPoint = {

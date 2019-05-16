@@ -1,4 +1,4 @@
-import { Pos, Rect, Size } from './types';
+import { Pos, Rect, Size } from "./types";
 
 export const partial = function(fn, ...args) {
   return () => fn.apply(this, args);
@@ -15,43 +15,50 @@ export const setOpacity = function(element, opacity) {
   element.style.opacity = opacity;
 };
 
-export const tag = function(name: string, attributes, ...children): HTMLElement {
+export const tag = function(
+  name: string,
+  attributes,
+  ...children
+): HTMLElement {
   const element = document.createElement(name);
 
   for (const attr in attributes) {
     if (attributes.hasOwnProperty(attr)) {
       const value = attributes[attr];
-      if (attr === 'class' || attr === 'className') {
+      if (attr === "class" || attr === "className") {
         element.className = String(value);
-      } else if (element instanceof HTMLLabelElement && (attr === 'for' || attr === 'htmlFor')) {
+      } else if (
+        element instanceof HTMLLabelElement &&
+        (attr === "for" || attr === "htmlFor")
+      ) {
         element.htmlFor = String(value);
       } else if (/^on/.test(attr)) {
-        if (typeof value !== 'function') {
-          throw new Error('Event listeners must be a function.');
+        if (typeof value !== "function") {
+          throw new Error("Event listeners must be a function.");
         }
-        observe(element, attr.replace(/^on/, ''), value);
-      } else if (attr === 'style') {
-        if (typeof value === 'object') {
+        observe(element, attr.replace(/^on/, ""), value);
+      } else if (attr === "style") {
+        if (typeof value === "object") {
           for (const cssProp in value) {
             if (value.hasOwnProperty(cssProp)) {
               const cssValue = value[cssProp];
-              if (cssProp === 'float') {
+              if (cssProp === "float") {
                 element.style.cssFloat = cssValue;
-              } else if (cssProp === 'opacity') {
+              } else if (cssProp === "opacity") {
                 setOpacity(element, Number(cssValue));
               } else {
                 try {
                   element.style[cssProp] = cssValue;
                 } catch (e) {
-                  console.error(cssProp + '=' + cssValue + ' ' + e.toString());
+                  console.error(cssProp + "=" + cssValue + " " + e.toString());
                 }
               }
             }
           }
         } else {
-          element.style.cssText += ';' + value;
+          element.style.cssText += ";" + value;
         }
-      } else if (attr === 'value' && element instanceof HTMLTextAreaElement) {
+      } else if (attr === "value" && element instanceof HTMLTextAreaElement) {
         element.value = value;
       } else if (value === true) {
         element.setAttribute(attr, attr);
@@ -64,26 +71,26 @@ export const tag = function(name: string, attributes, ...children): HTMLElement 
   }
 
   const addChild = function(chl) {
-    if (typeof chl === 'string') {
+    if (typeof chl === "string") {
       element.appendChild(document.createTextNode(chl));
     } else {
       element.appendChild(chl);
     }
   };
 
-  children.forEach((child) => addChild(child));
+  children.forEach(child => addChild(child));
 
   return element;
 };
 
 export const parseBoolean = function(value) {
   const s = value.trim().toLowerCase();
-  if (s === 'true') {
+  if (s === "true") {
     return true;
-  } else if (s === 'false') {
+  } else if (s === "false") {
     return false;
   } else {
-    throw new Error('illegal boolean value: ' + value);
+    throw new Error("illegal boolean value: " + value);
   }
 };
 
@@ -123,11 +130,14 @@ export const clipToScreen = function(rect: Rect): Pos {
 export const createAudio = function(urls: string | string[]) {
   const audio = new Audio();
 
-  if (typeof urls === 'string') {
+  if (typeof urls === "string") {
     audio.src = urls;
   } else {
     for (const url of urls) {
-      const source: HTMLElement = tag('source', { src: url, type: `audio/${url.match(/\.(\w+$)/)[1] || 'unknown'}`});
+      const source: HTMLElement = tag("source", {
+        src: url,
+        type: `audio/${url.match(/\.(\w+$)/)[1] || "unknown"}`
+      });
       audio.appendChild(source);
     }
   }
@@ -135,4 +145,4 @@ export const createAudio = function(urls: string | string[]) {
   return audio;
 };
 
-export const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
+export const sample = arr => arr[Math.floor(Math.random() * arr.length)];
