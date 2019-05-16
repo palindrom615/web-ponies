@@ -1,7 +1,7 @@
 const path = require("path");
 const es = require("event-stream");
 const fs = require("fs-extra");
-const bomstrip = require('bomstrip');
+const bomstrip = require("bomstrip");
 
 const origDir = path.resolve(__dirname, "../Desktop-Ponies/Content/Ponies");
 const destDir = path.resolve(__dirname, "../contents/ponies");
@@ -34,22 +34,35 @@ function parseLine(line) {
    */
   const tokenRegex = /(?:^|,)(?:(\d*\.?\d+)|(True|False)|"(\d+,\d+)"|"([^"]*)"|([\w \.#()']+)|{([^}]*)}|(\s?))/g;
   const res = [];
-  for (let eachToken; eachToken = tokenRegex.exec(line); typeof eachToken !== 'null') {
-    const [matched, numVal, boolVal, pointVal, quotVal, wordVal, arrVal, undefVal] = eachToken;
-    if (typeof numVal !== 'undefined') {
+  for (
+    let eachToken;
+    (eachToken = tokenRegex.exec(line));
+    typeof eachToken !== "null"
+  ) {
+    const [
+      matched,
+      numVal,
+      boolVal,
+      pointVal,
+      quotVal,
+      wordVal,
+      arrVal,
+      undefVal
+    ] = eachToken;
+    if (typeof numVal !== "undefined") {
       res.push(Number(numVal));
-    } else if (typeof boolVal !== 'undefined') {
-      res.push(boolVal === 'True');
-    } else if (typeof pointVal !== 'undefined') {
-      const [x, y] = pointVal.split(',').map(Number);
+    } else if (typeof boolVal !== "undefined") {
+      res.push(boolVal === "True");
+    } else if (typeof pointVal !== "undefined") {
+      const [x, y] = pointVal.split(",").map(Number);
       res.push({ x, y });
-    } else if (typeof quotVal !== 'undefined') {
+    } else if (typeof quotVal !== "undefined") {
       res.push(quotVal);
-    } else if (typeof wordVal !== 'undefined') {
+    } else if (typeof wordVal !== "undefined") {
       res.push(wordVal);
-    } else if (typeof arrVal !== 'undefined') {
+    } else if (typeof arrVal !== "undefined") {
       res.push(parseLine(arrVal));
-    } else if (typeof undefVal !== 'undefined') {
+    } else if (typeof undefVal !== "undefined") {
       res.push(undefined);
     }
   }
@@ -65,8 +78,7 @@ function insert(obj, prop, val) {
 }
 
 const iniLineToObj = ponyIni => line => {
-  if (line === '')
-    return;
+  if (line === "") return;
   const [type, ...vals] = parseLine(line);
 
   switch (type) {
@@ -132,18 +144,26 @@ const iniLineToObj = ponyIni => line => {
 
       break;
     }
-    case 'behaviorgroup': {
+    case "behaviorgroup": {
       const [num, name] = vals;
       ponyIni.behaviorgroups
-        ? ponyIni.behaviorgroups[num] = name
-        : ponyIni.behaviorgroups = {
+        ? (ponyIni.behaviorgroups[num] = name)
+        : (ponyIni.behaviorgroups = {
           [num]: name
-        };
+        });
 
       break;
     }
-    case 'Interaction': {
-      const [name, probability, proximity, targets, activate, behaviors, delay = 0] = vals;
+    case "Interaction": {
+      const [
+        name,
+        probability,
+        proximity,
+        targets,
+        activate,
+        behaviors,
+        delay = 0
+      ] = vals;
       const interaction = {
         name,
         probability,
@@ -153,7 +173,7 @@ const iniLineToObj = ponyIni => line => {
         behaviors,
         delay
       };
-      insert(ponyIni, 'interactions', interaction);
+      insert(ponyIni, "interactions", interaction);
       break;
     }
     case "Effect": {
@@ -190,11 +210,11 @@ const iniLineToObj = ponyIni => line => {
 
       break;
     }
-    case 'Speak': {
+    case "Speak": {
       const [name, text, files, skip, group] = vals;
 
       const speak = { name, text, files, skip, group };
-      insert(ponyIni, 'speeches', speak);
+      insert(ponyIni, "speeches", speak);
 
       break;
     }
@@ -204,7 +224,7 @@ const iniLineToObj = ponyIni => line => {
       break;
     }
     default: {
-      insert(ponyIni, type, vals)
+      insert(ponyIni, type, vals);
     }
   }
 };
@@ -235,8 +255,13 @@ async function parseIniFile(dir) {
 async function main() {
   const ponies = await fs.readdir(origDir);
   await fs.copy(origDir, destDir);
-  const res = await Promise.all(ponies.map(async dir => await parseIniFile(dir)));
-  await fs.writeFile(path.resolve(process.cwd(), 'contents/ponies/ponies.ini.json'), JSON.stringify(res));
+  const res = await Promise.all(
+    ponies.map(async dir => await parseIniFile(dir))
+  );
+  await fs.writeFile(
+    path.resolve(process.cwd(), "contents/ponies/ponies.ini.json"),
+    JSON.stringify(res)
+  );
 }
 
 main();

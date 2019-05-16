@@ -11,7 +11,6 @@ import {
   partial,
   sample,
   setOpacity,
-  stopObserving,
   tag,
   windowSize
 } from './utils';
@@ -227,7 +226,7 @@ export class WebPonies {
         if (!success) {
           console.error(
             `${this.resourceLoadedCount} of ${
-            this.resourceCount
+              this.resourceCount
             } load error: ${url}`
           );
         }
@@ -309,11 +308,7 @@ export class WebPonies {
     this.preload(loadAudio(urls), urls[1], callback);
   }
 
-  /**
-   *
-   *
-   */
-  addPonies(ponies: Array<Partial<Pony>>) {
+  addPonies(ponies: Partial<Pony>[]) {
     ponies.forEach((pony) => this.addPony(pony));
   }
   addPony(pony) {

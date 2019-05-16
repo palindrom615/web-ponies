@@ -1,11 +1,11 @@
-import Behavior from './behavior';
-import { BaseZIndex } from './constants';
-import EffectInstance from './effectInstance';
-import { WebPonies } from './index';
-import Instance from './instance';
-import Interaction from './interaction';
-import Pony from './pony';
-import { AllowedMoves, Movements, Pos, RemoveQueue } from './types';
+import Behavior from "./behavior";
+import { BaseZIndex } from "./constants";
+import EffectInstance from "./effectInstance";
+import { WebPonies } from "./index";
+import Instance from "./instance";
+import Interaction from "./interaction";
+import Pony from "./pony";
+import { AllowedMoves, Movements, Pos, RemoveQueue } from "./types";
 import {
   clipToScreen,
   createAudio,
@@ -13,10 +13,10 @@ import {
   sample,
   tag,
   windowSize
-} from './utils';
+} from "./utils";
 
 const removeAll = function(array, item) {
-  array = array.filter((elem) => elem !== item);
+  array = array.filter(elem => elem !== item);
 };
 
 export default class PonyInstance extends Instance {
@@ -54,24 +54,24 @@ export default class PonyInstance extends Instance {
       evt.preventDefault();
       if (
         evt.touches.length > 1 ||
-        (evt.type === 'touchend' && evt.touches.length > 0)
+        (evt.type === "touchend" && evt.touches.length > 0)
       ) {
         return;
       }
-      const newEvt: MouseEvent = document.createEvent('MouseEvents');
+      const newEvt: MouseEvent = document.createEvent("MouseEvents");
       let type = null;
       let touched: Touch = null;
       switch (evt.type) {
-        case 'touchstart':
-          type = 'mousedown';
+        case "touchstart":
+          type = "mousedown";
           touched = evt.changedTouches[0];
           break;
-        case 'touchmove':
-          type = 'mousemove';
+        case "touchmove":
+          type = "mousemove";
           touched = evt.changedTouches[0];
           break;
-        case 'touchend':
-          type = 'mouseup';
+        case "touchend":
+          type = "mouseup";
           touched = evt.changedTouches[0];
           break;
       }
@@ -94,15 +94,15 @@ export default class PonyInstance extends Instance {
       );
       evt.target.dispatchEvent(newEvt);
     };
-    return tag('img', {
-      draggable: 'false',
+    return tag("img", {
+      draggable: "false",
       style: {
-        position: 'fixed',
-        userSelect: 'none',
-        borderStyle: 'none',
-        margin: '0',
-        padding: '0',
-        backgroundColor: 'transparent',
+        position: "fixed",
+        userSelect: "none",
+        borderStyle: "none",
+        margin: "0",
+        padding: "0",
+        backgroundColor: "transparent",
         zIndex: String(BaseZIndex)
       },
       ondragstart(event) {
@@ -117,20 +117,18 @@ export default class PonyInstance extends Instance {
         const duration = (this.endTime - this.startTime) / 1000;
         console.log(
           `${this.pony.name} does ${this.currentBehavior.name}${
-          this.currentBehavior === this.paintBehavior
-            ? ''
-            : ' using ' + this.paintBehavior.name
+            this.currentBehavior === this.paintBehavior
+              ? ""
+              : " using " + this.paintBehavior.name
           } for ${duration} seconds, is at ${pos.x} x ${pos.y} and ${
-          this.following
-            ? 'follows ' + this.following.name()
-            : `wants to go to ${this.destPosition.x} x ${
-            this.destPosition.y
-            }`
+            this.following
+              ? "follows " + this.following.name()
+              : `wants to go to ${this.destPosition.x} x ${this.destPosition.y}`
           }. See:`,
           this
         );
       },
-      onmousedown: (event) => {
+      onmousedown: event => {
         if (event.button === 0) {
           this.webPonyRef.dragged = this;
           this.mouseover = true;
@@ -176,12 +174,11 @@ export default class PonyInstance extends Instance {
   canDrag() {
     if (!this.currentBehavior) {
       return this.pony.draggedBehaviors.length > 0;
-    } else {
-      const currentGroup = this.currentBehavior.group;
-      return this.pony.draggedBehaviors.some(
-        (behavior) => behavior.group === 0 || behavior.group === currentGroup
-      );
     }
+    const currentGroup = this.currentBehavior.group;
+    return this.pony.draggedBehaviors.some(
+      behavior => behavior.group === 0 || behavior.group === currentGroup
+    );
   }
   canMouseOver() {
     if (!this.currentBehavior) {
@@ -219,7 +216,7 @@ export default class PonyInstance extends Instance {
   }
   clear() {
     if (this.effects) {
-      this.effects.forEach((effect) => effect.clear());
+      this.effects.forEach(effect => effect.clear());
     }
     if (this.img.parentNode) {
       this.img.parentNode.removeChild(this.img);
@@ -256,32 +253,34 @@ export default class PonyInstance extends Instance {
     this.interactionTargets = targets;
   }
   speak(currentTime, speech) {
-    if (this.webPonyRef.config.dontSpeak) { return; }
+    if (this.webPonyRef.config.dontSpeak) {
+      return;
+    }
     if (speech.text) {
       const duration: number = Math.max(speech.text.length * 150, 1000);
       const remove: RemoveQueue = { at: currentTime + duration, element: null };
       let text: HTMLElement = tag(
-        'div',
+        "div",
         {
           ondblclick() {
             remove.at = Date.now();
           },
           style: {
-            fontSize: '14px',
-            color: '#294256',
-            background: 'rgba(255,255,255,0.8)',
-            position: 'fixed',
-            visibility: 'hidden',
-            margin: '0',
-            padding: '4px',
-            maxWidth: '250px',
-            textAlign: 'center',
-            borderRadius: '10px',
-            MozBorderRadius: '10px',
-            width: 'auto',
-            height: 'auto',
-            boxShadow: '2px 2px 12px rgba(0,0,0,0.4)',
-            MozBoxShadow: '2px 2px 12px rgba(0,0,0,0.4)',
+            fontSize: "14px",
+            color: "#294256",
+            background: "rgba(255,255,255,0.8)",
+            position: "fixed",
+            visibility: "hidden",
+            margin: "0",
+            padding: "4px",
+            maxWidth: "250px",
+            textAlign: "center",
+            borderRadius: "10px",
+            MozBorderRadius: "10px",
+            width: "auto",
+            height: "auto",
+            boxShadow: "2px 2px 12px rgba(0,0,0,0.4)",
+            MozBoxShadow: "2px 2px 12px rgba(0,0,0,0.4)",
             zIndex: String(BaseZIndex + 9000)
           }
         },
@@ -292,9 +291,9 @@ export default class PonyInstance extends Instance {
       this.webPonyRef.overlay.appendChild(text);
       const x = Math.round(rect.x + rect.width * 0.5 - text.offsetWidth * 0.5);
       const y = rect.y + rect.height;
-      text.style.left = x + 'px';
-      text.style.top = y + 'px';
-      text.style.visibility = '';
+      text.style.left = x + "px";
+      text.style.top = y + "px";
+      text.style.visibility = "";
       this.webPonyRef.removing.push(remove);
       text = null;
     }
@@ -315,12 +314,10 @@ export default class PonyInstance extends Instance {
 
         if (this.following.isFacingRight) {
           dest.x +=
-            this.currentBehavior.x -
-            this.following.paintBehavior.rightcenter.x;
+            this.currentBehavior.x - this.following.paintBehavior.rightcenter.x;
         } else {
           dest.x +=
-            -this.currentBehavior.x +
-            this.following.paintBehavior.leftcenter.x;
+            -this.currentBehavior.x + this.following.paintBehavior.leftcenter.x;
         }
         dest.y = this.following.currentPosition.y + this.currentBehavior.y;
         dist = distance(curr, dest);
@@ -336,7 +333,9 @@ export default class PonyInstance extends Instance {
       }
     } else {
       dest = this.destPosition;
-      if (dest) { dist = distance(curr, dest); }
+      if (dest) {
+        dist = distance(curr, dest);
+      }
     }
 
     let pos;
@@ -344,7 +343,10 @@ export default class PonyInstance extends Instance {
       const dx = dest.x - curr.x;
       const dy = dest.y - curr.y;
       const tdist =
-        this.currentBehavior.speed * passedTime * 0.01 * this.webPonyRef.config.speed;
+        this.currentBehavior.speed *
+        passedTime *
+        0.01 *
+        this.webPonyRef.config.speed;
 
       if (tdist >= dist) {
         pos = dest;
@@ -378,7 +380,7 @@ export default class PonyInstance extends Instance {
     }
 
     // update associated effects:
-    for (let i = 0; i < this.effects.length;) {
+    for (let i = 0; i < this.effects.length; ) {
       const effect = this.effects[i];
       if (effect.update(currentTime, passedTime)) {
         ++i;
@@ -395,7 +397,12 @@ export default class PonyInstance extends Instance {
     for (let i = 0, n = this.repeating.length; i < n; ++i) {
       const what = this.repeating[i];
       if (what.at <= currentTime) {
-        const inst = new EffectInstance(this, currentTime, what.effect, this.webPonyRef);
+        const inst = new EffectInstance(
+          this,
+          currentTime,
+          what.effect,
+          this.webPonyRef
+        );
         this.webPonyRef.overlay.appendChild(inst.img);
         inst.updatePosition();
         this.effects.push(inst);
@@ -453,7 +460,9 @@ export default class PonyInstance extends Instance {
       return;
     }
 
-    if (this.following) { return; }
+    if (this.following) {
+      return;
+    }
 
     const x1 = this.currentCenter.x;
     const y1 = this.currentCenter.y;
@@ -540,9 +549,7 @@ export default class PonyInstance extends Instance {
           //      they do it anyway, because currentInteraction is also set for them
           //      if it wouldn't be set, they could break out of interactions
           for (let i = 0, n = this.interactionTargets.length; i < n; ++i) {
-            this.interactionTargets[
-              i
-            ].interactionWait = this.interactionWait;
+            this.interactionTargets[i].interactionWait = this.interactionWait;
           }
           this.interactionTargets = null;
         }
@@ -732,11 +739,12 @@ export default class PonyInstance extends Instance {
         }
 
         // speed is in pixels/100ms, duration is in sec
-        const dist = behavior.speed * duration * 100 * this.webPonyRef.config.speed;
+        const dist =
+          behavior.speed * duration * 100 * this.webPonyRef.config.speed;
 
         let a;
         switch (
-        sample(reducedMovements.length === 0 ? movements : reducedMovements)
+          sample(reducedMovements.length === 0 ? movements : reducedMovements)
         ) {
           case Movements.Up:
             this.destPosition = {
@@ -818,7 +826,12 @@ export default class PonyInstance extends Instance {
 
     this.repeating = [];
     for (const effect of behavior.effects) {
-      const inst = new EffectInstance(this, this.startTime, effect, this.webPonyRef);
+      const inst = new EffectInstance(
+        this,
+        this.startTime,
+        effect,
+        this.webPonyRef
+      );
       this.webPonyRef.overlay.appendChild(inst.img);
       inst.updatePosition();
       neweffects.push(inst);
@@ -841,7 +854,9 @@ export default class PonyInstance extends Instance {
     });
   }
   speakRandom(startTime, probability) {
-    if (Math.random() >= probability) { return; }
+    if (Math.random() >= probability) {
+      return;
+    }
     const filtered = [];
     const currentGroup = this.currentBehavior.group;
     for (let i = 0, n = this.pony.randomSpeeches.length; i < n; ++i) {
@@ -872,7 +887,9 @@ export default class PonyInstance extends Instance {
       const behavior = behaviors[i];
       // don't filter looping behaviors because getNearestInstance filteres
       // looping instances and then it just degrades to a standard behavior
-      if (forceMovement && !behavior.isMoving()) { continue; }
+      if (forceMovement && !behavior.isMoving()) {
+        continue;
+      }
       if (
         currentGroup !== 0 &&
         behavior.group !== 0 &&
@@ -895,7 +912,9 @@ export default class PonyInstance extends Instance {
   }
   loops(instance) {
     while (instance) {
-      if (this === instance) { return true; }
+      if (this === instance) {
+        return true;
+      }
       instance = instance.following;
     }
     return false;
