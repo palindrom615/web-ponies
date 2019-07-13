@@ -340,7 +340,7 @@ export class WebPonies {
     while (count > 0) {
       let mininstcount = Infinity;
 
-      for (const [name, pony] of this.ponies.entries()) {
+      for (const pony of this.ponies.values()) {
         const instcount = pony.instances.length;
         if (instcount < mininstcount) {
           mininstcount = instcount;
@@ -429,7 +429,7 @@ export class WebPonies {
     return true;
   }
   unspawnAll() {
-    for (const [_, pony] of this.ponies.entries()) {
+    for (const pony of this.ponies.values()) {
       pony.unspawnAll();
     }
   }
@@ -438,12 +438,12 @@ export class WebPonies {
     this.ponies.clear();
   }
   preloadAll() {
-    for (const [_, pony] of this.ponies.entries()) {
+    for (const pony of this.ponies.values()) {
       pony.preload();
     }
   }
   preloadSpawned() {
-    for (const [_, pony] of this.ponies.entries()) {
+    for (const pony of this.ponies.values()) {
       if (pony.instances.length > 0) {
         pony.preload();
       }

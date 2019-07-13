@@ -5,7 +5,7 @@ import { AudioMimeTypes } from "./types";
 export default class Speech {
   name: string;
   text: string;
-  files;
+  files: string[];
   skip: boolean;
   group: number;
   constructor(speak: Partial<Speech>, baseurl: string) {
@@ -16,7 +16,7 @@ export default class Speech {
     this.group = group;
     if (files) {
       if (files.length > 0) {
-        this.files = {};
+        this.files = [];
         for (const file of files) {
           let ext = /(?:\.([^.]*))?$/.exec(file)[1];
           let filetype;

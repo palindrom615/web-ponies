@@ -7,7 +7,6 @@ import { WebPonies } from "./index";
 import Interaction from "./interaction";
 import Speech from "./speech";
 import { AllowedMoves } from "./types";
-import { createAudio, observe, partial } from "./utils";
 
 export default class Pony {
   baseurl: string;
@@ -183,9 +182,9 @@ export default class Pony {
 
       // dereference linked behaviors:
       for (const behavior of this.behaviors) {
-        behavior.deref("linked", this);
-        behavior.deref("stopped", this);
-        behavior.deref("moving", this);
+        behavior.deref("linked");
+        behavior.deref("stopped");
+        behavior.deref("moving");
       }
     }
     if (pony.interactions) {

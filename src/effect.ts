@@ -3,18 +3,6 @@ import urlJoin from "proper-url-join";
 import { WebPonies } from "./index";
 import { Locations, Pos, Size } from "./types";
 
-const parseLocation = function(value: string): string {
-  const loc = value.replace(/[-_\s]/g, "").toLowerCase();
-  if (
-    Object.keys(Locations)
-      .map(location => location.toLowerCase())
-      .includes(loc)
-  ) {
-    return Locations[loc];
-  }
-  throw new Error("illegal location: " + value);
-};
-
 export default class Effect {
   name: string;
   rightsize: Size = { width: 0, height: 0 };
@@ -27,14 +15,14 @@ export default class Effect {
 
   follow?;
   duration?;
-  delay?;
+  delay?: number;
   behavior?;
   dontRepeatAnimation?: boolean;
 
-  rightloc?;
-  rightcenter?;
-  leftloc?;
-  leftcenter?;
+  rightloc?: Locations;
+  rightcenter?: Pos;
+  leftloc?: Locations;
+  leftcenter?: Pos;
 
   webPonyRef: WebPonies;
 

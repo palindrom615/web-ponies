@@ -100,7 +100,7 @@ export default class Behavior {
       }
     }
   }
-  deref(property: string, pony: Pony) {
+  deref(property: keyof Behavior) {
     this[property] = undefined;
   }
   preload() {

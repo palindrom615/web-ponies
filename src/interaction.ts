@@ -7,7 +7,7 @@ export default class Interaction {
   probability;
   proximity: number | "default";
   activate: "one" | "all";
-  delay;
+  delay: number;
   deploy;
   targets: string[] = [];
   behaviors: string[];
