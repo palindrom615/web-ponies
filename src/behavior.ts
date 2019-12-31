@@ -101,7 +101,7 @@ export default class Behavior {
     }
   }
   deref(property: keyof Behavior) {
-    this[property] = undefined;
+    delete this[property]
   }
   preload() {
     this.effects.forEach(effect => {
