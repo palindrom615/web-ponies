@@ -1,10 +1,10 @@
 const webpack = require('webpack');
 const path = require('path');
-const Merge = require('webpack-merge');
+const {merge} = require('webpack-merge');
 const CommonConfig = require('./webpack.common.js');
 const TerserPlugin = require('terser-webpack-plugin');
 
-module.exports = Merge(CommonConfig, {
+module.exports = merge(CommonConfig, {
   entry: {
     app: [path.join(process.cwd(), 'src/index.ts')]
   },
@@ -23,10 +23,5 @@ module.exports = Merge(CommonConfig, {
       minimize: true,
       debug: false
     }),
-    new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify('production')
-      }
-    })
   ]
 });

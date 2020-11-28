@@ -1,11 +1,25 @@
 module.exports = {
-  parser: "@typescript-eslint/parser",
-  extends: ["plugin:@typescript-eslint/recommended"],
-  rules: {
-    "@typescript-eslint/indent": ["error", 2],
-    "@typescript-eslint/prefer-interface": "off",
-    "@typescript-eslint/explicit-member-accessibility": "off",
-    "@typescript-eslint/explicit-function-return-type": "off"
+  root: true,
+  extends: ["eslint:recommended"],
+  parserOptions: {
+    ecmaVersion: 12,
+    sourceType: 'module'
   },
-  overrides: [{ files: "src/**/*.ts" }]
+  env: {
+    browser: true,
+  },
+  overrides: [
+    {
+      parser: "@typescript-eslint/parser",
+      extends: ["plugin:@typescript-eslint/recommended"],
+      plugins: ["@typescript-eslint"],
+      rules: {
+        "@typescript-eslint/indent": ["error", 2],
+        "@typescript-eslint/prefer-interface": "off",
+        "@typescript-eslint/explicit-member-accessibility": "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
+      },
+      files: "src/**/*.ts",
+    },
+  ],
 };
